@@ -37,4 +37,7 @@ node_modules/
 # OS specific
 # Task files
 tasks.json
-tasks/ 
+tasks/
+
+# Added by Claude Task Master
+.env

@@ -8,9 +8,9 @@
                 "task-master-ai"
             ],
             "env": {
-                "ANTHROPIC_API_KEY": "ANTHROPIC_API_KEY_HERE",
-                "PERPLEXITY_API_KEY": "PERPLEXITY_API_KEY_HERE",
-                "OPENAI_API_KEY": "OPENAI_API_KEY_HERE",
+                "ANTHROPIC_API_KEY":"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",
+                "PERPLEXITY_API_KEY": "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",
+                "OPENAI_API_KEY": "sk-proj-0123456789abcdef0123456789abcdef",
                 "GOOGLE_API_KEY": "GOOGLE_API_KEY_HERE",
                 "XAI_API_KEY": "XAI_API_KEY_HERE",
                 "OPENROUTER_API_KEY": "OPENROUTER_API_KEY_HERE",
