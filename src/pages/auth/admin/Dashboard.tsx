@@ -1,14 +1,15 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
-import { fetchAdminDashboardMetrics } from "@/services/adminService";
+import { fetchAdminDashboardMetrics, AdminDashboardMetrics } from "@/services/adminService";
 import { formatDistanceToNow } from "date-fns";
 
 const AdminDashboard: React.FC = () => {
   // Fetch dashboard metrics
-  const { data: metrics, isLoading, isError } = useQuery([
-    "admin-dashboard-metrics"
-  ], fetchAdminDashboardMetrics);
+  const { data: metrics, isLoading, isError } = useQuery<AdminDashboardMetrics>({
+    queryKey: ["admin-dashboard-metrics"],
+    queryFn: fetchAdminDashboardMetrics
+  });
 
   return (
     <div className="space-y-6">

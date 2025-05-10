@@ -14,6 +14,7 @@ import { LandingPage } from "@/pages/LandingPage";
 import { LoginPage } from "@/pages/auth/LoginPage";
 import { RegisterPage } from "@/pages/auth/RegisterPage";
 import { ForgotPasswordPage } from "@/pages/auth/ForgotPasswordPage";
+import PropertyDataDemoPage from "@/pages/demo/PropertyDataDemo";
 
 // Agent Pages
 import { DashboardPage } from "@/pages/auth/agent/DashboardPage";
@@ -47,6 +48,7 @@ function App() {
               <Route path="/login" element={<LoginPage />} />
               <Route path="/register" element={<RegisterPage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/demo/property-data" element={<PropertyDataDemoPage />} />
             </Route>
 
             {/* Agent Routes */}

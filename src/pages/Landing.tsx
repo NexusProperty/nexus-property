@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -61,6 +60,12 @@ const Landing: React.FC = () => {
               </p>
             </div>
           </div>
+          
+          <div className="mt-12 text-center">
+            <Button size="lg" variant="outline" asChild>
+              <Link to="/demo/property-data">Try Our Data Demo</Link>
+            </Button>
+          </div>
         </div>
       </section>
       
@@ -98,6 +103,7 @@ const Landing: React.FC = () => {
                   <li><Link to="/help" className="hover:text-white">Help Center</Link></li>
                   <li><Link to="/guide" className="hover:text-white">Agent Guide</Link></li>
                   <li><Link to="/faq" className="hover:text-white">FAQ</Link></li>
+                  <li><Link to="/demo/property-data" className="hover:text-white">Data Demo</Link></li>
                 </ul>
               </div>
               
