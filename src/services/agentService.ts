@@ -1,14 +1,14 @@
-import { supabase } from "@/integrations/supabase/client";
-import { Appraisal } from "@/types/appraisal";
+import { supabase } from '@/lib/supabase';
+import { Appraisal, AppraisalStatus } from "@/types/appraisal";
 import { toast } from "@/components/ui/use-toast";
 
 // Helper to map raw Supabase data to Appraisal type
 function mapToAppraisal(raw: Record<string, unknown>): Appraisal {
-  const allowedStatuses = ["pending", "claimed", "completed", "cancelled"] as const;
+  const allowedStatuses: AppraisalStatus[] = ["draft", "processing", "published", "claimed", "completed", "cancelled"];
   const statusRaw = raw.status as string;
-  const status = allowedStatuses.includes(statusRaw as typeof allowedStatuses[number])
-    ? (statusRaw as typeof allowedStatuses[number])
-    : "pending";
+  const status = allowedStatuses.includes(statusRaw as AppraisalStatus)
+    ? (statusRaw as AppraisalStatus)
+    : "draft";
   return {
     id: (raw.id as string) ?? "",
     property_address: (raw.property_address as string) ?? "",

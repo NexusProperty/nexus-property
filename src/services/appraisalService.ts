@@ -1,6 +1,8 @@
 import { supabase } from "@/lib/supabase";
-import { Appraisal } from "@/types/appraisal";
+import { Appraisal, AppraisalStatus } from "@/types/appraisal";
 import { toast } from "@/components/ui/use-toast";
+// import type { Json } from "@/types/supabase";
+type Json = string | number | boolean | null | { [key: string]: Json } | Json[];
 
 // Define a type for property details
 interface PropertyDetails {
@@ -41,7 +43,8 @@ export const fetchCustomerAppraisals = async (): Promise<Appraisal[]> => {
       return [];
     }
     
-    return data as Appraisal[];
+    // Use mapToAppraisal for each item and cast as unknown as Appraisal[]
+    return ((Array.isArray(data) ? data : []).filter(d => d && typeof d === 'object' && 'id' in d).map(mapToAppraisal)) as unknown as Appraisal[];
   } catch (error) {
     console.error("Unexpected error fetching appraisals:", error);
     toast({
@@ -71,7 +74,8 @@ export const fetchAppraisalById = async (id: string): Promise<Appraisal | null> 
       return null;
     }
     
-    return data as Appraisal;
+    // Use mapToAppraisal if data is valid, else return null
+    return data && typeof data === 'object' && 'id' in data ? mapToAppraisal(data) : null;
   } catch (error) {
     console.error("Unexpected error fetching appraisal:", error);
     toast({
@@ -214,27 +218,66 @@ export const claimAppraisal = async (id: string): Promise<boolean> => {
   }
 };
 
-// Fetch all available appraisals (not claimed)
+// Helper to map raw Supabase data to Appraisal type
+function mapToAppraisal(raw: Record<string, unknown>): Appraisal {
+  // Only map if required fields are present
+  if (!raw || typeof raw !== 'object' || !('id' in raw) || !('property_address' in raw)) {
+    throw new Error('Invalid appraisal data');
+  }
+  // Runtime checks for fields that may be {} or null
+  const report_url = typeof raw.report_url === 'string' ? raw.report_url : null;
+  const customer_id = typeof raw.customer_id === 'string' ? raw.customer_id : null;
+  const comparable_properties = Array.isArray(raw.comparable_properties) ? raw.comparable_properties : null;
+  const market_analysis = typeof raw.market_analysis === 'object' && raw.market_analysis !== null ? raw.market_analysis : null;
+  const property_details = typeof raw.property_details === 'object' && raw.property_details !== null ? raw.property_details : null;
+  return {
+    id: raw.id as string,
+    property_address: raw.property_address as string,
+    property_type: raw.property_type as string,
+    bedrooms: raw.bedrooms as number,
+    bathrooms: raw.bathrooms as number,
+    land_size: raw.land_size as number,
+    created_at: raw.created_at as string,
+    status: raw.status as Appraisal["status"], // AppraisalStatus includes 'cancelled'
+    estimated_value_min: raw.estimated_value_min as number,
+    estimated_value_max: raw.estimated_value_max as number,
+    customer_name: raw.customer_name as string,
+    customer_email: raw.customer_email as string,
+    customer_phone: raw.customer_phone as string,
+    agent_id: raw.agent_id as string | undefined,
+    claimed_at: raw.claimed_at as string | undefined,
+    completed_at: raw.completed_at as string | undefined,
+    final_value: raw.final_value as number | undefined,
+    agent_notes: raw.agent_notes as string | undefined,
+    completion_notes: raw.completion_notes as string | undefined,
+    property_details,
+    report_url,
+    customer_id,
+    comparable_properties,
+    market_analysis,
+  };
+}
+
 export const fetchAvailableAppraisals = async (): Promise<Appraisal[]> => {
   try {
     const { data, error } = await supabase
       .from('appraisals')
       .select('*')
-      .eq('status', 'pending')
+      .eq('status', 'published')
       .order('created_at', { ascending: false });
 
     if (error) {
       throw error;
     }
-
-    return data || [];
+    // Filter out any non-object results, then cast as Appraisal[]
+    // TypeScript can't guarantee the shape, but our runtime check in mapToAppraisal ensures it
+    return ((Array.isArray(data) ? data : []).filter(d => d && typeof d === 'object' && 'id' in d).map(mapToAppraisal)) as unknown as Appraisal[];
   } catch (error) {
     console.error('Error fetching available appraisals:', error);
     throw error;
   }
 };
 
-// Fetch appraisals claimed by the current agent
 export const fetchAgentAppraisals = async (agentId: string): Promise<Appraisal[]> => {
   try {
     const { data, error } = await supabase
@@ -246,49 +289,72 @@ export const fetchAgentAppraisals = async (agentId: string): Promise<Appraisal[]
     if (error) {
       throw error;
     }
-
-    return data || [];
+    // Filter out any non-object results, then cast as Appraisal[]
+    // TypeScript can't guarantee the shape, but our runtime check in mapToAppraisal ensures it
+    return ((Array.isArray(data) ? data : []).filter(d => d && typeof d === 'object' && 'id' in d).map(mapToAppraisal)) as unknown as Appraisal[];
   } catch (error) {
     console.error('Error fetching agent appraisals:', error);
     throw error;
   }
 };
 
-// Create a new appraisal request
 export const createAppraisalRequest = async (
   appraisalData: Omit<Appraisal, 'id' | 'created_at' | 'status' | 'agent_id'>
 ): Promise<Appraisal> => {
   try {
+    // Always set status to 'published' for new appraisal requests
     const { data, error } = await supabase
       .from('appraisals')
       .insert({
         ...appraisalData,
-        status: 'pending',
+        comparable_properties: appraisalData.comparable_properties as Json,
+        market_analysis: appraisalData.market_analysis as Json,
+        property_details: appraisalData.property_details as Json,
+        status: 'published',
         created_at: new Date().toISOString()
       })
       .select()
       .single();
-
     if (error) {
       throw error;
     }
-
-    return data;
+    if (!data || typeof data !== 'object' || !('id' in data)) {
+      throw new Error('Invalid appraisal data returned');
+    }
+    return mapToAppraisal(data);
   } catch (error) {
     console.error('Error creating appraisal request:', error);
     throw error;
   }
 };
 
-// Update an appraisal
+// Helper to narrow status to allowed values for Supabase
+function getAllowedStatus(status: AppraisalStatus | undefined): "draft" | "processing" | "published" | "claimed" | "completed" | undefined {
+  const allowedStatuses = ["draft", "processing", "published", "claimed", "completed"];
+  if (status && allowedStatuses.includes(status)) {
+    return status as "draft" | "processing" | "published" | "claimed" | "completed";
+  }
+  return undefined;
+}
+
 export const updateAppraisal = async (
   appraisalId: string,
   updateData: Partial<Appraisal>
 ): Promise<Appraisal> => {
   try {
+    // Omit status from the spread if not allowed
+    const { status, ...rest } = updateData;
+    const allowedStatus = getAllowedStatus(status);
+    const updatePayload = {
+      ...rest,
+      comparable_properties: updateData.comparable_properties as Json,
+      market_analysis: updateData.market_analysis as Json,
+      property_details: updateData.property_details as Json,
+      ...(allowedStatus ? { status: allowedStatus } : {})
+    };
     const { data, error } = await supabase
       .from('appraisals')
-      .update(updateData)
+      .update(updatePayload)
       .eq('id', appraisalId)
       .select()
       .single();
@@ -296,8 +362,10 @@ export const updateAppraisal = async (
     if (error) {
       throw error;
     }
-
-    return data;
+    if (!data || typeof data !== 'object' || !('id' in data)) {
+      throw new Error('Invalid appraisal data returned');
+    }
+    return mapToAppraisal(data);
   } catch (error) {
     console.error('Error updating appraisal:', error);
     throw error;
@@ -340,6 +408,11 @@ export interface AgentDashboardMetrics {
   monthlyCompleted: { month: string; completed: number }[];
 }
 
+// Type guard for dashboard metrics
+function isAppraisalSummary(a: unknown): a is { status: string; completed_at?: string } {
+  return typeof a === 'object' && a !== null && 'status' in a;
+}
+
 // Fetch dashboard metrics for the agent dashboard
 export async function fetchAgentDashboardMetrics(): Promise<AgentDashboardMetrics> {
   // Get the current user
@@ -347,38 +420,26 @@ export async function fetchAgentDashboardMetrics(): Promise<AgentDashboardMetric
   const user = userResponse.data.user;
   if (!user) throw new Error("Not authenticated");
   const agentId = user.id;
-
   // Fetch total appraisals claimed by this agent
   const { data: appraisals, error } = await supabase
     .from("appraisals")
     .select("id, status, completed_at, created_at")
     .eq("agent_id", agentId);
   if (error || !appraisals) throw error || new Error("No data");
-
-  // Total appraisals
-  const totalAppraisals = appraisals.length;
-  // New leads (status = 'claimed' or 'published' but not completed)
-  const newLeads = appraisals.filter(a => a.status === "claimed" || a.status === "published").length;
-  // Completed this month
+  // Use type guard in all relevant filters/maps
+  const totalAppraisals = (Array.isArray(appraisals) ? appraisals : []).filter(isAppraisalSummary).length;
+  const newLeads = (Array.isArray(appraisals) ? appraisals : []).filter(a => isAppraisalSummary(a) && (a.status === "claimed" || a.status === "published")).length;
+  // Restore these declarations before usage
   const now = new Date();
   const thisMonth = now.getMonth();
   const thisYear = now.getFullYear();
-  const completedThisMonth = appraisals.filter(a => {
-    if (!a.completed_at) return false;
-    const d = new Date(a.completed_at);
-    return d.getMonth() === thisMonth && d.getFullYear() === thisYear;
-  }).length;
-  // Monthly completed for chart (last 12 months)
+  const completedThisMonth = (Array.isArray(appraisals) ? appraisals : []).filter(a => isAppraisalSummary(a) && a.completed_at && (() => { const d = new Date(a.completed_at as string); return d.getMonth() === thisMonth && d.getFullYear() === thisYear; })()).length;
   const monthlyCompleted: { month: string; completed: number }[] = [];
   const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   for (let i = 0; i < 12; i++) {
     const monthIdx = (thisMonth - i + 12) % 12;
     const year = thisMonth - i < 0 ? thisYear - 1 : thisYear;
-    const count = appraisals.filter(a => {
-      if (!a.completed_at) return false;
-      const d = new Date(a.completed_at);
-      return d.getMonth() === monthIdx && d.getFullYear() === year;
-    }).length;
+    const count = (Array.isArray(appraisals) ? appraisals : []).filter(a => isAppraisalSummary(a) && a.completed_at && (() => { const d = new Date(a.completed_at as string); return d.getMonth() === monthIdx && d.getFullYear() === year; })()).length;
     monthlyCompleted.unshift({ month: months[monthIdx], completed: count });
   }
   return {

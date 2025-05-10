@@ -1,4 +1,4 @@
-import { supabase } from '../integrations/supabase/client';
+import { supabase } from '@/lib/supabase';
 import { toast } from "@/components/ui/use-toast";
 
 /**
@@ -103,7 +103,7 @@ export const appraisalProcessingService = {
         
         attempts++;
         
-        if (status === 'completed' || status === 'cancelled' || attempts >= maxAttempts) {
+        if (status === 'completed' || attempts >= maxAttempts) {
           return;
         }
         

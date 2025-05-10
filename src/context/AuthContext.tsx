@@ -1,7 +1,6 @@
-
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { Session } from "@supabase/supabase-js";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/supabase";
 import { User } from "@/types/auth";
 
 interface AuthContextType {
@@ -67,9 +66,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser({
           id: data.id,
           email: data.email,
-          name: `${data.first_name || ''} ${data.last_name || ''}`.trim(),
+          full_name: `${data.first_name || ''} ${data.last_name || ''}`.trim(),
           role: data.role,
-          avatarUrl: data.avatar_url
+          avatar_url: data.avatar_url || undefined,
+          created_at: data.created_at || new Date().toISOString(),
+          updated_at: data.updated_at || new Date().toISOString()
         });
       }
     } catch (error) {
@@ -103,8 +104,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         password,
         options: {
           data: {
-            first_name: userData.name?.split(' ')[0],
-            last_name: userData.name?.split(' ').slice(1).join(' '),
+            first_name: userData.full_name?.split(' ')[0],
+            last_name: userData.full_name?.split(' ').slice(1).join(' '),
             role: userData.role || 'customer',
           },
         },

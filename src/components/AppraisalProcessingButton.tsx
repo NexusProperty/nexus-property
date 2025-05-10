@@ -39,9 +39,6 @@ export const AppraisalProcessingButton: React.FC<AppraisalProcessingButtonProps>
             
             // Navigate to the appraisal detail page
             navigate(`/appraisals/${appraisalId}`);
-          } else if (status === 'cancelled') {
-            setIsProcessing(false);
-            stopPolling();
           }
         }
       );
