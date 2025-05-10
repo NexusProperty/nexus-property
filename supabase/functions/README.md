@@ -1,6 +1,41 @@
 # Supabase Edge Functions
 
-This directory contains Supabase Edge Functions for the AppraisalHub application.
+This directory contains Supabase Edge Functions, which run on the Deno runtime.
+
+## Development Setup
+
+To work with these functions locally, you need to:
+
+1. Install the Deno VS Code extension: `denoland.vscode-deno`
+2. Make sure VS Code is configured to use Deno for this directory (see `.vscode/settings.json`)
+3. Install the Supabase CLI: `npm install -g supabase`
+
+## Running Functions Locally
+
+To run a function locally:
+
+```bash
+supabase functions serve create-appraisal --env-file .env.local
+```
+
+## Deploying Functions
+
+To deploy a function:
+
+```bash
+supabase functions deploy create-appraisal
+```
+
+## TypeScript Configuration
+
+The TypeScript configuration for these functions is in `tsconfig.json`. This configuration is specific to Deno and is separate from the main project's TypeScript configuration.
+
+## Notes on Deno
+
+- Deno uses URL imports instead of Node.js-style imports
+- Deno has its own standard library and package management system
+- Deno functions run in a secure sandbox with limited access to the file system and network
+- Deno functions can access environment variables through `Deno.env.get()`
 
 ## Available Functions
 
@@ -16,34 +51,6 @@ This function handles the creation of new appraisals. It:
 6. Sets the status to "processing"
 
 In a future phase, this function will also trigger the data ingestion/AI process.
-
-## Deployment
-
-To deploy these functions to your Supabase project, you can use the Supabase CLI:
-
-```bash
-supabase functions deploy
-```
-
-Or you can deploy individual functions:
-
-```bash
-supabase functions deploy create-appraisal
-```
-
-## Local Development
-
-To run these functions locally for development, you can use the Supabase CLI:
-
-```bash
-supabase functions serve
-```
-
-Or you can run individual functions:
-
-```bash
-supabase functions serve create-appraisal
-```
 
 ## Testing
 

@@ -41,6 +41,9 @@ const mockAppraisal = {
   agent_id: "agent123",
   claimed_at: "2023-06-16T09:15:00Z",
   agent_notes: "Customer is looking to sell within the next 3 months. Property has been recently renovated.",
+  completed_at: "",
+  final_value: 0,
+  completion_notes: "",
 };
 
 export const AppraisalDetail = () => {

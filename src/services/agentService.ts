@@ -2,6 +2,38 @@ import { supabase } from "@/integrations/supabase/client";
 import { Appraisal } from "@/types/appraisal";
 import { toast } from "@/components/ui/use-toast";
 
+// Helper to map raw Supabase data to Appraisal type
+function mapToAppraisal(raw: Record<string, unknown>): Appraisal {
+  const allowedStatuses = ["pending", "claimed", "completed", "cancelled"] as const;
+  const statusRaw = raw.status as string;
+  const status = allowedStatuses.includes(statusRaw as typeof allowedStatuses[number])
+    ? (statusRaw as typeof allowedStatuses[number])
+    : "pending";
+  return {
+    id: (raw.id as string) ?? "",
+    property_address: (raw.property_address as string) ?? "",
+    property_type: (raw.property_type as string) ?? "Unknown",
+    bedrooms: (raw.bedrooms as number) ?? 0,
+    bathrooms: (raw.bathrooms as number) ?? 0,
+    land_size: (raw.land_size as number) ?? 0,
+    created_at: (raw.created_at as string) ?? "",
+    status,
+    estimated_value_min: (raw.estimated_value_min as number) ?? 0,
+    estimated_value_max: (raw.estimated_value_max as number) ?? 0,
+    customer_name: (raw.customer_name as string) ?? "",
+    customer_email: (raw.customer_email as string) ?? "",
+    customer_phone: (raw.customer_phone as string) ?? "",
+    agent_id: (raw.agent_id as string) ?? null,
+    claimed_at: (raw.claimed_at as string) ?? null,
+    agent_notes: (raw.agent_notes as string) ?? "",
+    completed_at: (raw.completed_at as string) ?? null,
+    final_value: (raw.final_value as number) ?? null,
+    completion_notes: (raw.completion_notes as string) ?? "",
+    // Add any additional fields as needed, with safe defaults
+    // ...
+  };
+}
+
 export const fetchAgentAppraisals = async (): Promise<Appraisal[]> => {
   try {
     const { data: { user } } = await supabase.auth.getUser();
@@ -26,7 +58,7 @@ export const fetchAgentAppraisals = async (): Promise<Appraisal[]> => {
       return [];
     }
     
-    return data as Appraisal[];
+    return (data ?? []).map(mapToAppraisal);
   } catch (error) {
     console.error("Unexpected error fetching agent appraisals:", error);
     toast({
@@ -57,7 +89,7 @@ export const fetchAppraisalFeed = async (): Promise<Appraisal[]> => {
       return [];
     }
     
-    return data as Appraisal[];
+    return (data ?? []).map(mapToAppraisal);
   } catch (error) {
     console.error("Unexpected error fetching appraisal feed:", error);
     toast({

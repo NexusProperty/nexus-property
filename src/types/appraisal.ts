@@ -11,10 +11,10 @@ export type AppraisalStatus =
 export interface PropertyDetails {
   bedrooms?: number;
   bathrooms?: number;
-  square_footage?: number;
-  property_type?: string;
-  year_built?: number;
-  lot_size?: number;
+  buildingSize?: number;
+  propertyType?: string;
+  yearBuilt?: number;
+  landSize?: number;
   features?: string[];
   additional_features?: string[];
   condition?: string;
@@ -23,25 +23,25 @@ export interface PropertyDetails {
 
 export interface ComparableProperty {
   address: string;
-  price: number;
+  salePrice: number;
   bedrooms: number;
   bathrooms: number;
-  square_footage: number;
-  sold_date: string;
-  distance_from_subject?: number;
-  year_built?: number;
-  lot_size?: number;
-  property_type?: string;
+  buildingSize: number;
+  saleDate: string;
+  distanceFromSubject?: number;
+  yearBuilt?: number;
+  landSize?: number;
+  propertyType?: string;
 }
 
 export interface MarketAnalysis {
-  median_price?: number;
-  price_change_3_months?: number;
-  price_change_12_months?: number;
-  average_days_on_market?: number;
-  local_market_trend?: string;
-  demand_level?: string;
-  analysis_text?: string;
+  medianPrice?: number;
+  priceChange3Months?: number;
+  priceChange12Months?: number;
+  averageDaysOnMarket?: number;
+  localMarketTrend?: string;
+  demandLevel?: string;
+  analysisText?: string;
 }
 
 export interface Appraisal {
@@ -64,6 +64,11 @@ export interface Appraisal {
   final_value?: number;
   agent_notes?: string;
   completion_notes?: string;
+  property_details?: PropertyDetails | null;
+  report_url?: string | null;
+  customer_id?: string | null;
+  comparable_properties?: ComparableProperty[] | null;
+  market_analysis?: MarketAnalysis | null;
 }
 
 export interface AppraisalFormData {

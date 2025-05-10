@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Appraisal } from "@/types/appraisal";
-import { getAppraisalById } from "@/services/appraisalService";
+import { fetchAppraisalById } from "@/services/appraisalService";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,7 +25,7 @@ export const AgentAppraisalDetail = () => {
       
       try {
         setLoading(true);
-        const data = await getAppraisalById(id);
+        const data = await fetchAppraisalById(id);
         if (data) {
           setAppraisal(data);
           setError(null);
