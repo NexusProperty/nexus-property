@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { fetchAdminDashboardMetrics, AdminDashboardMetrics } from "@/services/adminService";
 import { formatDistanceToNow } from "date-fns";
+import IntegrationList from '@/components/integrations/IntegrationList';
 
 const AdminDashboard: React.FC = () => {
   // Fetch dashboard metrics
@@ -158,6 +159,11 @@ const AdminDashboard: React.FC = () => {
             </div>
           </CardContent>
         </Card>
+      </div>
+      
+      <div className="mt-8">
+        <h2 className="text-2xl font-semibold mb-4">Integration Management</h2>
+        <IntegrationList />
       </div>
     </div>
   );

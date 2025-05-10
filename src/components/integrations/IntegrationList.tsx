@@ -1,6 +1,8 @@
 import React from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { fetchUserIntegrations } from '@/services/integrationService';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { fetchUserIntegrations, createIntegration, updateIntegration, deleteIntegration } from '@/services/integrationService';
+import IntegrationStatusIndicator from './IntegrationStatusIndicator';
+import IntegrationDetailForm, { IntegrationFormValues } from './IntegrationDetailForm';
 
 // Integration type for UI
 export type Integration = {
@@ -17,6 +19,7 @@ const statusColors = {
 };
 
 export default function IntegrationList() {
+  const queryClient = useQueryClient();
   const { data: integrations = [], isLoading, isError } = useQuery({
     queryKey: ['integrations'],
     queryFn: fetchUserIntegrations,
@@ -24,6 +27,22 @@ export default function IntegrationList() {
   const [filter, setFilter] = React.useState('');
   const [sortKey, setSortKey] = React.useState<'name' | 'provider' | 'status'>('name');
   const [sortAsc, setSortAsc] = React.useState(true);
+  const [showForm, setShowForm] = React.useState(false);
+  const [editing, setEditing] = React.useState<Integration | null>(null);
+
+  // Mutations
+  const createMutation = useMutation({
+    mutationFn: createIntegration,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['integrations'] }),
+  });
+  const updateMutation = useMutation({
+    mutationFn: ({ id, updates }: { id: string; updates: Partial<IntegrationFormValues> }) => updateIntegration(id, updates),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['integrations'] }),
+  });
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => deleteIntegration(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['integrations'] }),
+  });
 
   // Sorting logic
   const sortedIntegrations = [...integrations]
@@ -37,6 +56,43 @@ export default function IntegrationList() {
       return 0;
     });
 
+  // Convert Integration to IntegrationFormValues for editing
+  const integrationToFormValues = (integration: Integration): IntegrationFormValues => ({
+    name: integration.name,
+    provider: integration.provider,
+    apiKey: '', // Not available in Integration, left blank for editing
+    refreshInterval: 60, // Default or fetch from integration if available
+    status: integration.status === 'active',
+  });
+
+  // Handlers
+  const handleAdd = () => {
+    setEditing(null);
+    setShowForm(true);
+  };
+  const handleEdit = (integration: Integration) => {
+    setEditing(integration);
+    setShowForm(true);
+  };
+  const handleDelete = (id: string) => {
+    if (window.confirm('Are you sure you want to delete this integration?')) {
+      deleteMutation.mutate(id);
+    }
+  };
+  const handleSave = (values: IntegrationFormValues) => {
+    if (editing) {
+      updateMutation.mutate({ id: editing.id, updates: values });
+    } else {
+      createMutation.mutate(values);
+    }
+    setShowForm(false);
+    setEditing(null);
+  };
+  const handleCancel = () => {
+    setShowForm(false);
+    setEditing(null);
+  };
+
   return (
     <div className="p-4">
       <div className="flex items-center mb-4">
@@ -47,11 +103,21 @@ export default function IntegrationList() {
           value={filter}
           onChange={e => setFilter(e.target.value)}
         />
-        <span className="ml-auto text-sm text-gray-500">
-          Showing {sortedIntegrations.length} of {integrations.length}
-        </span>
+        <button
+          className="ml-auto px-3 py-1 rounded bg-blue-600 text-white hover:bg-blue-700"
+          onClick={handleAdd}
+        >
+          + Add Integration
+        </button>
       </div>
-      <div className="overflow-x-auto">
+      {showForm && (
+        <IntegrationDetailForm
+          integration={editing ? integrationToFormValues(editing) : undefined}
+          onSave={handleSave}
+          onCancel={handleCancel}
+        />
+      )}
+      <div className="overflow-x-auto mt-4">
         <table className="min-w-full bg-white border rounded shadow">
           <thead>
             <tr>
@@ -110,11 +176,11 @@ export default function IntegrationList() {
                   <td className="px-4 py-2 font-medium">{integration.name}</td>
                   <td className="px-4 py-2">{integration.provider}</td>
                   <td className="px-4 py-2">
-                    <span className={`inline-block px-2 py-1 rounded text-xs font-semibold ${statusColors[integration.status]}`}>{integration.status}</span>
+                    <IntegrationStatusIndicator status={integration.status} />
                   </td>
                   <td className="px-4 py-2">
-                    <button className="text-blue-600 hover:underline mr-2">Edit</button>
-                    <button className="text-red-600 hover:underline">Delete</button>
+                    <button className="text-blue-600 hover:underline mr-2" onClick={() => handleEdit(integration)}>Edit</button>
+                    <button className="text-red-600 hover:underline" onClick={() => handleDelete(integration.id)}>Delete</button>
                   </td>
                 </tr>
               ))
