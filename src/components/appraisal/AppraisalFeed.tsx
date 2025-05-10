@@ -1,12 +1,11 @@
-import { useState, useEffect } from "react";
-import { Appraisal } from "@/types/appraisal";
+import { useState } from "react";
+import { Appraisal, AppraisalStatus } from "@/types/appraisal";
 import { fetchAppraisalFeed, claimAppraisal } from "@/services/agentService";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
-import { format } from "date-fns";
 import { Link, useNavigate } from "react-router-dom";
 import { Eye, Search, MapPin, Home, DollarSign, Calendar, ArrowRight, Filter, SortAsc, SortDesc } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
@@ -49,7 +48,7 @@ const mockAppraisals: Appraisal[] = [
     bathrooms: 2,
     land_size: 500,
     created_at: "2023-06-15T10:30:00Z",
-    status: "pending",
+    status: "draft" as AppraisalStatus,
     estimated_value_min: 850000,
     estimated_value_max: 950000,
     customer_name: "John Smith",
@@ -64,7 +63,7 @@ const mockAppraisals: Appraisal[] = [
     bathrooms: 1,
     land_size: 0,
     created_at: "2023-06-14T14:45:00Z",
-    status: "pending",
+    status: "draft" as AppraisalStatus,
     estimated_value_min: 650000,
     estimated_value_max: 750000,
     customer_name: "Sarah Johnson",
@@ -79,7 +78,7 @@ const mockAppraisals: Appraisal[] = [
     bathrooms: 2,
     land_size: 650,
     created_at: "2023-06-13T09:15:00Z",
-    status: "pending",
+    status: "draft" as AppraisalStatus,
     estimated_value_min: 950000,
     estimated_value_max: 1100000,
     customer_name: "Michael Brown",
@@ -87,6 +86,14 @@ const mockAppraisals: Appraisal[] = [
     customer_phone: "+64 21 456 7890",
   },
 ];
+
+// Define filter options type
+interface FilterOptions {
+  propertyType: string;
+  bedrooms: string;
+  minValue?: number;
+  maxValue?: number;
+}
 
 // Appraisal card component
 const AppraisalCard = ({ appraisal }: { appraisal: Appraisal }) => {
@@ -244,6 +251,102 @@ const EmptyState = () => {
   );
 };
 
+// No results state
+const NoResultsState = ({ onClearFilters }: { onClearFilters: () => void }) => {
+  return (
+    <div className="text-center py-12">
+      <h3 className="text-lg font-medium mb-2">No matching leads</h3>
+      <p className="text-muted-foreground mb-4">
+        No appraisal leads match your current search and filter criteria.
+      </p>
+      <Button 
+        variant="outline" 
+        onClick={onClearFilters}
+      >
+        Clear Filters
+      </Button>
+    </div>
+  );
+};
+
+// Error state
+const ErrorState = ({ onRetry }: { onRetry: () => void }) => {
+  return (
+    <div className="text-center py-12">
+      <h3 className="text-lg font-medium mb-2">Error loading leads</h3>
+      <p className="text-muted-foreground mb-4">
+        There was a problem loading the appraisal leads. Please try again later.
+      </p>
+      <Button onClick={onRetry}>Retry</Button>
+    </div>
+  );
+};
+
+// Search and filter controls
+const SearchAndFilterControls = ({ 
+  searchTerm, 
+  setSearchTerm, 
+  onFilterClick, 
+  sortOption, 
+  setSortOption 
+}: { 
+  searchTerm: string; 
+  setSearchTerm: (term: string) => void; 
+  onFilterClick: () => void; 
+  sortOption: string; 
+  setSortOption: (option: string) => void;
+}) => {
+  return (
+    <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+      <div className="relative flex-1 sm:flex-none">
+        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+        <Input
+          type="search"
+          placeholder="Search by address..."
+          className="pl-8"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+      </div>
+      <Button 
+        variant="outline" 
+        onClick={onFilterClick}
+        className="flex items-center"
+      >
+        <Filter className="mr-2 h-4 w-4" />
+        Filter
+      </Button>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" className="flex items-center">
+            {sortOption === "newest" && <SortDesc className="mr-2 h-4 w-4" />}
+            {sortOption === "oldest" && <SortAsc className="mr-2 h-4 w-4" />}
+            {sortOption === "highest-value" && <DollarSign className="mr-2 h-4 w-4" />}
+            {sortOption === "lowest-value" && <DollarSign className="mr-2 h-4 w-4" />}
+            Sort
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuLabel>Sort By</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => setSortOption("newest")}>
+            Newest First
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setSortOption("oldest")}>
+            Oldest First
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setSortOption("highest-value")}>
+            Highest Value
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setSortOption("lowest-value")}>
+            Lowest Value
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
+};
+
 // Filter dialog component
 const FilterDialog = ({ 
   isOpen, 
@@ -339,14 +442,6 @@ const FilterDialog = ({
   );
 };
 
-// Define filter options type
-interface FilterOptions {
-  propertyType: string;
-  bedrooms: string;
-  minValue?: number;
-  maxValue?: number;
-}
-
 // Main component
 export const AppraisalFeed = () => {
   const navigate = useNavigate();
@@ -416,6 +511,18 @@ export const AppraisalFeed = () => {
       }
     }) : [];
   
+  const handleRetry = () => window.location.reload();
+  
+  const handleClearFilters = () => {
+    setSearchTerm("");
+    setFilters({
+      propertyType: 'all',
+      bedrooms: 'any',
+      minValue: undefined,
+      maxValue: undefined
+    });
+  };
+  
   if (isLoading) {
     return (
       <div>
@@ -427,15 +534,7 @@ export const AppraisalFeed = () => {
   }
   
   if (error) {
-    return (
-      <div className="text-center py-12">
-        <h3 className="text-lg font-medium mb-2">Error loading leads</h3>
-        <p className="text-muted-foreground mb-4">
-          There was a problem loading the appraisal leads. Please try again later.
-        </p>
-        <Button onClick={() => window.location.reload()}>Retry</Button>
-      </div>
-    );
+    return <ErrorState onRetry={handleRetry} />;
   }
   
   if (!appraisals || appraisals.length === 0) {
@@ -446,76 +545,17 @@ export const AppraisalFeed = () => {
     <div>
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <h2 className="text-2xl font-bold">Appraisal Leads</h2>
-        <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
-          <div className="relative flex-1 sm:flex-none">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Search by address..."
-              className="pl-8"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
-          <Button 
-            variant="outline" 
-            onClick={() => setIsFilterDialogOpen(true)}
-            className="flex items-center"
-          >
-            <Filter className="mr-2 h-4 w-4" />
-            Filter
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="flex items-center">
-                {sortOption === "newest" && <SortDesc className="mr-2 h-4 w-4" />}
-                {sortOption === "oldest" && <SortAsc className="mr-2 h-4 w-4" />}
-                {sortOption === "highest-value" && <DollarSign className="mr-2 h-4 w-4" />}
-                {sortOption === "lowest-value" && <DollarSign className="mr-2 h-4 w-4" />}
-                Sort
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Sort By</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => setSortOption("newest")}>
-                Newest First
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setSortOption("oldest")}>
-                Oldest First
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setSortOption("highest-value")}>
-                Highest Value
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setSortOption("lowest-value")}>
-                Lowest Value
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+        <SearchAndFilterControls 
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          onFilterClick={() => setIsFilterDialogOpen(true)}
+          sortOption={sortOption}
+          setSortOption={setSortOption}
+        />
       </div>
       
       {filteredAndSortedAppraisals.length === 0 ? (
-        <div className="text-center py-12">
-          <h3 className="text-lg font-medium mb-2">No matching leads</h3>
-          <p className="text-muted-foreground mb-4">
-            No appraisal leads match your current search and filter criteria.
-          </p>
-          <Button 
-            variant="outline" 
-            onClick={() => {
-              setSearchTerm("");
-              setFilters({
-                propertyType: 'all',
-                bedrooms: 'any',
-                minValue: undefined,
-                maxValue: undefined
-              });
-            }}
-          >
-            Clear Filters
-          </Button>
-        </div>
+        <NoResultsState onClearFilters={handleClearFilters} />
       ) : (
         <div>
           {filteredAndSortedAppraisals.map((appraisal) => (

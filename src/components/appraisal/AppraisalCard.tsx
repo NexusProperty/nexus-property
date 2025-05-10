@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link } from "react-router-dom";
 import { 
@@ -15,7 +14,8 @@ import {
   CheckCircle, 
   AlertCircle, 
   Share2, 
-  FileText 
+  FileText,
+  XCircle
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Appraisal, AppraisalStatus } from "@/types/appraisal";
@@ -53,6 +53,11 @@ const statusConfig: Record<AppraisalStatus, { label: string; icon: React.Element
     icon: AlertCircle, 
     color: "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-300" 
   },
+  cancelled: {
+    label: "Cancelled",
+    icon: XCircle,
+    color: "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"
+  }
 };
 
 export const AppraisalCard: React.FC<AppraisalCardProps> = ({ appraisal, onPublish }) => {

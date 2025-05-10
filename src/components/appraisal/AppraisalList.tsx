@@ -1,57 +1,49 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { fetchCustomerAppraisals } from "@/services/appraisalService";
-import { Appraisal } from "@/types/appraisal";
+import { Appraisal, AppraisalStatus } from "@/types/appraisal";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatDate } from "@/lib/utils";
+import { formatDate, formatCurrency } from "@/lib/utils";
+import { FileText, ArrowRight } from "lucide-react";
 
 // Status badge component
-const StatusBadge = ({ status }: { status: string }) => {
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "draft":
-        return "bg-gray-500";
-      case "processing":
-        return "bg-blue-500";
-      case "published":
-        return "bg-green-500";
-      case "claimed":
-        return "bg-purple-500";
-      case "completed":
-        return "bg-teal-500";
-      case "cancelled":
-        return "bg-red-500";
-      default:
-        return "bg-gray-500";
+const StatusBadge = ({ status }: { status: AppraisalStatus }) => {
+  const statusConfig: Record<AppraisalStatus, { label: string; color: string }> = {
+    draft: { 
+      label: "Draft", 
+      color: "bg-gray-500" 
+    },
+    processing: { 
+      label: "Processing", 
+      color: "bg-blue-500" 
+    },
+    published: { 
+      label: "Published", 
+      color: "bg-green-500" 
+    },
+    claimed: { 
+      label: "Claimed", 
+      color: "bg-purple-500" 
+    },
+    completed: { 
+      label: "Completed", 
+      color: "bg-teal-500" 
+    },
+    cancelled: { 
+      label: "Cancelled", 
+      color: "bg-red-500" 
     }
   };
 
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case "draft":
-        return "Draft";
-      case "processing":
-        return "Processing";
-      case "published":
-        return "Published";
-      case "claimed":
-        return "Claimed";
-      case "completed":
-        return "Completed";
-      case "cancelled":
-        return "Cancelled";
-      default:
-        return status;
-    }
-  };
+  const { label, color } = statusConfig[status];
 
   return (
-    <Badge className={`${getStatusColor(status)} text-white`}>
-      {getStatusLabel(status)}
+    <Badge className={`${color} text-white`}>
+      {label}
     </Badge>
   );
 };
@@ -71,19 +63,18 @@ const AppraisalCard = ({ appraisal, onClick }: { appraisal: Appraisal, onClick: 
       <CardContent className="pb-2 flex-grow">
         <div className="text-sm text-muted-foreground">
           <p>Created: {formatDate(appraisal.created_at)}</p>
-          {appraisal.updated_at && (
-            <p>Updated: {formatDate(appraisal.updated_at)}</p>
-          )}
           {appraisal.estimated_value_min && appraisal.estimated_value_max && (
             <p className="mt-2 font-medium text-foreground">
-              Estimated Value: ${appraisal.estimated_value_min.toLocaleString()} - ${appraisal.estimated_value_max.toLocaleString()}
+              Estimated Value: {formatCurrency(appraisal.estimated_value_min)} - {formatCurrency(appraisal.estimated_value_max)}
             </p>
           )}
         </div>
       </CardContent>
       <CardFooter>
-        <Button variant="outline" size="sm" asChild className="w-full" onClick={onClick}>
-          <Link to={`/appraisals/${appraisal.id}`}>View Details</Link>
+        <Button variant="outline" size="sm" className="w-full" onClick={onClick}>
+          <FileText className="mr-2 h-4 w-4" />
+          View Details
+          <ArrowRight className="ml-2 h-4 w-4" />
         </Button>
       </CardFooter>
     </Card>
@@ -126,6 +117,19 @@ const EmptyState = () => {
   );
 };
 
+// Error state
+const ErrorState = ({ onRetry }: { onRetry: () => void }) => {
+  return (
+    <div className="text-center py-12">
+      <h3 className="text-lg font-medium mb-2">Error loading appraisals</h3>
+      <p className="text-muted-foreground mb-4">
+        There was a problem loading your appraisals. Please try again later.
+      </p>
+      <Button onClick={onRetry}>Retry</Button>
+    </div>
+  );
+};
+
 // Main component
 export const AppraisalList = () => {
   const { data: appraisals, isLoading, error } = useQuery({
@@ -133,6 +137,9 @@ export const AppraisalList = () => {
     queryFn: fetchCustomerAppraisals,
   });
   const navigate = useNavigate();
+
+  const handleRetry = () => window.location.reload();
+  const handleViewDetails = (id: string) => navigate(`/appraisals/${id}`);
 
   if (isLoading) {
     return (
@@ -145,15 +152,7 @@ export const AppraisalList = () => {
   }
 
   if (error) {
-    return (
-      <div className="text-center py-12">
-        <h3 className="text-lg font-medium mb-2">Error loading appraisals</h3>
-        <p className="text-muted-foreground mb-4">
-          There was a problem loading your appraisals. Please try again later.
-        </p>
-        <Button onClick={() => window.location.reload()}>Retry</Button>
-      </div>
-    );
+    return <ErrorState onRetry={handleRetry} />;
   }
 
   if (!appraisals || appraisals.length === 0) {
@@ -166,7 +165,7 @@ export const AppraisalList = () => {
         <AppraisalCard 
           key={appraisal.id} 
           appraisal={appraisal} 
-          onClick={() => navigate(`/appraisals/${appraisal.id}`)}
+          onClick={() => handleViewDetails(appraisal.id)}
         />
       ))}
     </div>
