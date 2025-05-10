@@ -52,7 +52,7 @@ export interface Appraisal {
   bathrooms: number;
   land_size: number;
   created_at: string;
-  status: 'pending' | 'claimed' | 'completed' | 'cancelled';
+  status: AppraisalStatus;
   estimated_value_min: number;
   estimated_value_max: number;
   customer_name: string;

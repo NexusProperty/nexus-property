@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Appraisal } from "@/types/appraisal";
+import { Appraisal, AppraisalStatus } from "@/types/appraisal";
 import { fetchAppraisalById } from "@/services/appraisalService";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -43,13 +43,14 @@ export const AgentAppraisalDetail = () => {
     loadAppraisal();
   }, [id]);
 
-  const getStatusBadge = (status: Appraisal["status"]) => {
+  const getStatusBadge = (status: AppraisalStatus) => {
     const statusConfig = {
       draft: { label: "Draft", variant: "outline" as const },
       processing: { label: "Processing", variant: "secondary" as const },
-      completed: { label: "Completed", variant: "default" as const },
       published: { label: "Published", variant: "default" as const },
-      claimed: { label: "Claimed", variant: "secondary" as const }
+      claimed: { label: "Claimed", variant: "secondary" as const },
+      completed: { label: "Completed", variant: "default" as const },
+      cancelled: { label: "Cancelled", variant: "destructive" as const }
     };
 
     const config = statusConfig[status];
@@ -209,7 +210,7 @@ export const AgentAppraisalDetail = () => {
             </Card>
           </div>
           
-          {appraisal.property_details?.features && appraisal.property_details.features.length > 0 && (
+          {appraisal.property_details?.features?.length > 0 && (
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-lg">Property Features</CardTitle>
@@ -270,7 +271,7 @@ export const AgentAppraisalDetail = () => {
         </TabsContent>
         
         <TabsContent value="comparables" className="space-y-4">
-          {appraisal.comparable_properties && appraisal.comparable_properties.length > 0 ? (
+          {appraisal.comparable_properties?.length > 0 ? (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {appraisal.comparable_properties.map((property, index) => (
                 <Card key={index}>
