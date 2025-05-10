@@ -144,4 +144,4 @@ export const claimAppraisal = async (appraisalId: string): Promise<boolean> => {
     });
     return false;
   }
-}; 
+};

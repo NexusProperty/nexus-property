@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "@/components/ui/use-toast";
+import { User } from "@/types/auth";
 
 export const CustomerLayout: React.FC = () => {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
@@ -60,14 +61,21 @@ export const CustomerLayout: React.FC = () => {
     },
   ];
 
+  // Create a compatible user object for Header component
+  const headerUser = user ? {
+    name: user.full_name || 'Customer User',
+    email: user.email || '',
+    role: user.role || 'customer'
+  } : {
+    name: "Jane Customer",
+    email: "jane@example.com",
+    role: "customer"
+  };
+
   return (
     <div className="flex min-h-screen flex-col">
       <Header
-        user={user || {
-          name: "Jane Customer",
-          email: "jane@example.com",
-          role: "customer"
-        }}
+        user={headerUser}
         showMobileMenu={showMobileMenu}
         onMobileMenuToggle={() => setShowMobileMenu(!showMobileMenu)}
         onLogout={handleLogout}
