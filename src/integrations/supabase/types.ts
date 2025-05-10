@@ -9,16 +9,216 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      appraisals: {
+        Row: {
+          agent_id: string | null
+          comparable_properties: Json | null
+          created_at: string
+          customer_id: string | null
+          estimated_value_max: number | null
+          estimated_value_min: number | null
+          id: string
+          market_analysis: Json | null
+          property_address: string
+          property_details: Json | null
+          report_url: string | null
+          status: Database["public"]["Enums"]["appraisal_status"]
+          updated_at: string
+        }
+        Insert: {
+          agent_id?: string | null
+          comparable_properties?: Json | null
+          created_at?: string
+          customer_id?: string | null
+          estimated_value_max?: number | null
+          estimated_value_min?: number | null
+          id?: string
+          market_analysis?: Json | null
+          property_address: string
+          property_details?: Json | null
+          report_url?: string | null
+          status?: Database["public"]["Enums"]["appraisal_status"]
+          updated_at?: string
+        }
+        Update: {
+          agent_id?: string | null
+          comparable_properties?: Json | null
+          created_at?: string
+          customer_id?: string | null
+          estimated_value_max?: number | null
+          estimated_value_min?: number | null
+          id?: string
+          market_analysis?: Json | null
+          property_address?: string
+          property_details?: Json | null
+          report_url?: string | null
+          status?: Database["public"]["Enums"]["appraisal_status"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      integrations: {
+        Row: {
+          config: Json
+          created_at: string
+          id: string
+          name: string
+          provider: string
+          team_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          config: Json
+          created_at?: string
+          id?: string
+          name: string
+          provider: string
+          team_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          config?: Json
+          created_at?: string
+          id?: string
+          name?: string
+          provider?: string
+          team_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integrations_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string
+          first_name: string | null
+          id: string
+          last_name: string | null
+          role: Database["public"]["Enums"]["user_role"]
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email: string
+          first_name?: string | null
+          id: string
+          last_name?: string | null
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          role?: Database["public"]["Enums"]["user_role"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      team_members: {
+        Row: {
+          created_at: string
+          id: string
+          role: string
+          team_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: string
+          team_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: string
+          team_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_members_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      teams: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_role: {
+        Args: { user_id: string }
+        Returns: Database["public"]["Enums"]["user_role"]
+      }
+      is_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_team_member: {
+        Args: { team_uuid: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      appraisal_status:
+        | "draft"
+        | "processing"
+        | "completed"
+        | "published"
+        | "claimed"
+      user_role: "admin" | "agent" | "customer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -133,6 +333,15 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      appraisal_status: [
+        "draft",
+        "processing",
+        "completed",
+        "published",
+        "claimed",
+      ],
+      user_role: ["admin", "agent", "customer"],
+    },
   },
 } as const

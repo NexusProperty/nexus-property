@@ -1,33 +1,41 @@
 
 import React, { useState } from "react";
-import { Outlet, Navigate } from "react-router-dom";
+import { Outlet, Navigate, useLocation } from "react-router-dom";
 import { Home, FileText, Settings, LogOut } from "lucide-react";
 import { Header } from "@/components/navigation/Header";
 import { MobileNav } from "@/components/navigation/MobileNav";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
-
-// Mock user for demo purposes
-const mockUser = {
-  name: "Jane Customer",
-  email: "jane@example.com",
-  role: "customer" as const,
-};
+import { useAuth } from "@/context/AuthContext";
+import { toast } from "@/components/ui/use-toast";
 
 export const CustomerLayout: React.FC = () => {
   const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const { user, signOut } = useAuth();
+  const location = useLocation();
   
-  // This would be replaced with actual role-based auth check
-  const isCustomer = true;
+  // For demo purposes, we'll pretend the user is authenticated
+  // In a real implementation, this would be determined by the auth state
+  const isCustomer = true; // user?.role === 'customer';
 
   // In a real implementation, redirect non-customer users
   if (!isCustomer) {
-    return <Navigate to="/login" />;
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  const handleLogout = () => {
-    console.log("Customer logging out");
-    // In a real implementation, this would handle the logout process
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      toast({
+        title: "Logged out successfully",
+      });
+    } catch (error) {
+      console.error("Error logging out:", error);
+      toast({
+        title: "Error logging out",
+        variant: "destructive",
+      });
+    }
   };
 
   const navSections = [
@@ -55,7 +63,11 @@ export const CustomerLayout: React.FC = () => {
   return (
     <div className="flex min-h-screen flex-col">
       <Header
-        user={mockUser}
+        user={user || {
+          name: "Jane Customer",
+          email: "jane@example.com",
+          role: "customer"
+        }}
         showMobileMenu={showMobileMenu}
         onMobileMenuToggle={() => setShowMobileMenu(!showMobileMenu)}
         onLogout={handleLogout}

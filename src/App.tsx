@@ -23,6 +23,7 @@ import AgentDashboard from "./pages/auth/agent/Dashboard";
 
 // Customer pages
 import CustomerDashboard from "./pages/auth/customer/Dashboard";
+import CustomerAppraisals from "./pages/auth/customer/Appraisals";
 
 // Admin pages
 import AdminDashboard from "./pages/auth/admin/Dashboard";
@@ -57,7 +58,7 @@ const App = () => (
           {/* Customer routes */}
           <Route path="/customer" element={<CustomerLayout />}>
             <Route index element={<CustomerDashboard />} />
-            <Route path="appraisals" element={<div>My Appraisals</div>} />
+            <Route path="appraisals" element={<CustomerAppraisals />} />
             <Route path="settings" element={<div>Account Settings</div>} />
           </Route>
           
