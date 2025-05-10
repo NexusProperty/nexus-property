@@ -10,7 +10,7 @@ Focus: Building the interactive elements, data display, form logic, and state ma
     -   [x] Fetch and display lists of data (Appraisals, Users, Team Members, Integration Status, Appraisal Feed leads) on their respective screens using Supabase queries.
     -   [x] Build components to render detailed views of individual items (e.g., single Appraisal view, User Profile detail, Team Member detail).
     -   [x] Integrate loading, error, and empty states into data display components.
-    -   [ ] Implement filtering, sorting, and search functionality on data lists.
+    -   [x] Implement filtering, sorting, and search functionality on data lists.
 -   **1.2. Build & Integrate Data Forms:**
     -   [x] Complete forms for creating and editing data (Create New Appraisal Wizard, Edit Appraisal, Add/Edit Team Member, Team Settings, Integration Configuration, User Profile forms).
     -   [x] Integrate React Hook Form and Zod validation for all forms.
@@ -38,7 +38,10 @@ Focus: Implementing the core business logic, data persistence, security rules, a
 
 -   **2.1. Finalize Database Schema & Implement Comprehensive RLS:**
     -   [x] Conduct a final review of all table schemas (`profiles`, `appraisals`, `teams`, `team_members`, `integrations`) to ensure they fully support planned features.
-    -   [ ] **CRITICAL:** Implement and rigorously test **Row-Level Security (RLS)** policies for *every* table containing user data. Ensure that users can *only* access, insert, update, or delete data they are explicitly permitted to based on their role and relationships (e.g., owner, team member, admin). This is foundational to the platform's security.
+    -   [x] **CRITICAL:** Implement and rigorously test **Row-Level Security (RLS)** policies for *every* table containing user data. Ensure that users can *only* access, insert, update, or delete data they are explicitly permitted to based on their role and relationships (e.g., owner, team member, admin). This is foundational to the platform's security.
+      - [x] Implemented RLS policies for `profiles` table, allowing users to view and update their own profiles, admins to manage all profiles, and ensuring profile creation during signup.
+      - [x] Implemented RLS policies for `integrations` table, allowing users to manage their own integrations, team members to view team integrations, team creators to manage team integrations, and admins to manage all integrations.
+      - [x] Verified existing RLS policies for `teams`, `team_members`, and `appraisals` tables.
 -   **2.2. Develop Supabase Edge Functions / API Endpoints:**
     -   [x] Create the necessary backend functions to handle data interactions initiated by the frontend forms and actions:
         -   [x] Endpoint to receive data from the "Create Appraisal" forms (both Customer and Agent) and trigger the data ingestion/AI process (Task 3.4).
@@ -137,6 +140,58 @@ This task takes the final structured data from the `Appraisals` table and produc
 -   **[ ] Store the Generated Report:** Upload the generated PDF file to secure storage (e.g., Supabase Storage).
 -   **[ ] Update Appraisal Record:** Update the corresponding `Appraisal` record in the database with the URL or path to the stored report file.
 
+### 4.3. Implement AI Integration with Google Cloud Vertex AI
+
+This section provides detailed implementation steps for integrating Google Cloud's Vertex AI (Gemini) into the appraisal generation process.
+
+1.  **Install Google Cloud Client Libraries:**
+    -   [ ] Open your project's terminal within Cursor (or your standard terminal).
+    -   [ ] Use Cursor's chat or command palette to find the correct installation command for the Google Cloud Vertex AI Node.js client library.
+        -   *Prompt/Command Example:* "How do I install the Node.js client library for Google Cloud Vertex AI?" or "npm install @google-cloud/vertexai"
+    -   [ ] Execute the command in your terminal: `npm install @google-cloud/vertexai` (or equivalent for your package manager).
+    -   [ ] Ensure the dependency is added to your `package.json`.
+
+2.  **Write Code to Access Stored Credentials & Instantiate AI Client:**
+    -   [ ] Navigate to your backend processing file.
+    -   [ ] Use Cursor's chat to ask how to initialize the Vertex AI client using credentials stored as environment variables or loaded from a JSON file (depending on how you secured them in Step 4 of the Prerequisites).
+        -   *Prompt Example:* "In Node.js, how do I instantiate the @google-cloud/vertexai client using credentials stored in environment variables like `GOOGLE_CLOUD_PROJECT` and `GOOGLE_APPLICATION_CREDENTIALS`?"
+    -   [ ] Use Cursor's code generation feature to write the client instantiation code.
+    -   [ ] Integrate this code into your Task 4.1 processing function, ensuring it's initialized correctly.
+
+3.  **Craft the Prompt (Iterative Process with Cursor's AI):**
+    -   [ ] **Understand Input Data:** Review the structure of the standardized data received from your Data Ingestion pipeline (3.4). Use Cursor's "Explain Code" feature if needed to fully grasp the data format.
+    -   [ ] **Brainstorm Prompt Content:** Use Cursor's chat to brainstorm what information about the property, comparables, and market data needs to be included in the prompt to Gemini to get the desired analysis and text outputs.
+        -   *Prompt Example:* "I have property data including [list data points, e.g., address, beds, baths, square footage, condition notes], a list of comparables with [list data points, e.g., sale price, date, distance, brief features], and market trend summaries [describe trend data]. How should I structure a prompt for Gemini-Pro to generate a market analysis summary, a property description, and commentary on the comparables?"
+    -   [ ] **Write Prompt Formatting Code:** Use Cursor's code generation to write the JavaScript/TypeScript code that takes the input data object and formats it into a clean, structured text string for the Gemini prompt.
+        -   *Prompt Example:* "Write a TypeScript function that takes an object `{ property: { ... }, comparables: [{ ... }], marketTrends: { ... } }` and formats it into a string suitable as input for an LLM prompt, with clear sections for each type of data."
+    -   [ ] **Refine Prompts:** This is an iterative process. After initial results, you will likely need to adjust the prompt wording, instructions, and data format passed to Gemini to improve the quality and relevance of the AI-generated text. Use Cursor's editing and chat features to help refine the prompts based on the AI's output.
+
+4.  **Write API Call Logic:**
+    -   [ ] Within your Task 4.1 function, after formatting the prompt, use Cursor to generate the code to send the prompt to the Gemini API using the Vertex AI client.
+        -   *Prompt Example:* "Using the `@google-cloud/vertexai` client in Node.js, how do I send a text prompt to the `gemini-pro` model and get the text response?"
+    -   [ ] Implement `async/await` to handle the asynchronous nature of the API call.
+    -   [ ] Integrate basic error handling (`try...catch`) around the API call.
+
+5.  **Parse the AI Response:**
+    -   [ ] Examine the format of the text response you receive from the Gemini API.
+    -   [ ] Use Cursor's code generation to write code to parse the response. If you structured your prompt to ask for specific sections (e.g., using headings like "## Market Analysis"), you can write code to extract those sections.
+        -   *Prompt Example:* "I have a string response from an LLM that looks like `## Market Analysis\n...\n## Property Description\n...`. Write TypeScript code to extract the text under 'Market Analysis' and 'Property Description' into separate variables."
+    -   [ ] Add error handling for unexpected response formats or missing sections.
+
+6.  **Integrate AI Outputs into Data Structure:**
+    -   [ ] Recall the required structure for the `Appraisals` table columns (`property_details`, `market_analysis`, etc.). Use Cursor's type hints (from your generated `supabase.ts`) or "Explain Code" on the relevant data structure definitions if needed.
+    -   [ ] Use Cursor to write code that takes the results from your algorithmic processes (valuation range, comparable list) and the parsed text outputs from the AI, and combines them into the final object ready to be saved to the `Appraisals` table.
+        -   *Prompt Example:* "Combine the following data points: numerical valuation range, a list of comparable objects, an AI-generated market analysis string, and an AI-generated property description string, into an object that matches the structure of my Supabase `appraisals` table (refer to `src/types/supabase.ts` for the `Appraisal` type)."
+
+7.  **Handle Limited vs. Full Appraisal Logic:**
+    -   [ ] Modify the prompt formatting logic (Step 3) and potentially the parsing logic (Step 5) to handle the distinction between generating text for a 'limited' customer appraisal (more concise, fewer details) and a 'full' agent appraisal (detailed, professional tone).
+    -   [ ] Use conditional logic (`if/else`) based on whether the appraisal is being generated for a customer or an agent (this status should be available from the initial request triggering Task 4.1).
+
+8.  **Testing the AI Integration:**
+    -   [ ] Write unit tests for the functions that format the prompt, call the API, and parse the response (Steps 3, 4, 5). You'll likely need to mock the actual API call during unit testing. Use Cursor's test generation features.
+        -   *Prompt Example:* "Generate unit tests for this TypeScript function that formats data into a Gemini prompt."
+    -   [ ] Write integration tests for the overall Task 4.1 process to ensure the data ingestion output flows correctly into your combined algorithmic/AI logic and produces the expected structured output for the `Appraisals` table.
+
 ## Phase 5. Testing
 
 Focus: Implementing comprehensive testing across all parts of the application.
@@ -229,10 +284,18 @@ Focus: Providing resources for users and future developers.
 - Added bar chart visualization of appraisals completed per month using Recharts
 - Enhanced dashboard quick access buttons and links
 
+### Data List Functionality
+- Implemented advanced filtering, sorting, and search functionality for appraisal lists
+- Added property type, bedroom count, and value range filters
+- Implemented sorting by date and value
+- Added search by property address
+- Created responsive UI for filter and sort controls
+- Implemented empty state handling for filtered results
+
 ## Next Steps
 
-1. Implement dashboard analytics with charts and visualizations
+1. Implement Row-Level Security (RLS) policies for all database tables
 2. Develop integration management components
-3. Create appraisal status tracking and reporting
-4. Implement market analysis features
+3. Create API integration with CoreLogic and REINZ
+4. Implement AI processing and report generation
 5. Set up testing infrastructure

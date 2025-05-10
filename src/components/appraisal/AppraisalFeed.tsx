@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { Link, useNavigate } from "react-router-dom";
-import { Eye, Search, MapPin, Home, DollarSign, Calendar, ArrowRight } from "lucide-react";
+import { Eye, Search, MapPin, Home, DollarSign, Calendar, ArrowRight, Filter, SortAsc, SortDesc } from "lucide-react";
 import { toast } from "@/components/ui/use-toast";
 import { useQuery } from "@tanstack/react-query";
 import { 
@@ -23,6 +23,21 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { formatDate, formatCurrency } from "@/lib/utils";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // Mock data for the appraisal feed
 const mockAppraisals: Appraisal[] = [
@@ -229,9 +244,122 @@ const EmptyState = () => {
   );
 };
 
+// Filter dialog component
+const FilterDialog = ({ 
+  isOpen, 
+  onOpenChange, 
+  filters, 
+  setFilters 
+}: { 
+  isOpen: boolean; 
+  onOpenChange: (open: boolean) => void; 
+  filters: FilterOptions; 
+  setFilters: (filters: FilterOptions) => void;
+}) => {
+  return (
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Filter Appraisals</DialogTitle>
+          <DialogDescription>
+            Filter the appraisal leads by property type, bedrooms, and estimated value range.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4 py-4">
+          <div className="grid gap-2">
+            <Label htmlFor="property-type">Property Type</Label>
+            <Select 
+              value={filters.propertyType} 
+              onValueChange={(value) => setFilters({...filters, propertyType: value})}
+            >
+              <SelectTrigger id="property-type">
+                <SelectValue placeholder="All Property Types" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Property Types</SelectItem>
+                <SelectItem value="Residential">Residential</SelectItem>
+                <SelectItem value="Apartment">Apartment</SelectItem>
+                <SelectItem value="Commercial">Commercial</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="bedrooms">Bedrooms</Label>
+            <Select 
+              value={filters.bedrooms} 
+              onValueChange={(value) => setFilters({...filters, bedrooms: value})}
+            >
+              <SelectTrigger id="bedrooms">
+                <SelectValue placeholder="Any" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="any">Any</SelectItem>
+                <SelectItem value="1">1+</SelectItem>
+                <SelectItem value="2">2+</SelectItem>
+                <SelectItem value="3">3+</SelectItem>
+                <SelectItem value="4">4+</SelectItem>
+                <SelectItem value="5">5+</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="min-value">Minimum Estimated Value</Label>
+            <Input 
+              id="min-value" 
+              type="number" 
+              placeholder="No minimum" 
+              value={filters.minValue || ''} 
+              onChange={(e) => setFilters({...filters, minValue: e.target.value ? Number(e.target.value) : undefined})}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="max-value">Maximum Estimated Value</Label>
+            <Input 
+              id="max-value" 
+              type="number" 
+              placeholder="No maximum" 
+              value={filters.maxValue || ''} 
+              onChange={(e) => setFilters({...filters, maxValue: e.target.value ? Number(e.target.value) : undefined})}
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setFilters({
+            propertyType: 'all',
+            bedrooms: 'any',
+            minValue: undefined,
+            maxValue: undefined
+          })}>
+            Reset Filters
+          </Button>
+          <Button onClick={() => onOpenChange(false)}>Apply Filters</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+// Define filter options type
+interface FilterOptions {
+  propertyType: string;
+  bedrooms: string;
+  minValue?: number;
+  maxValue?: number;
+}
+
 // Main component
 export const AppraisalFeed = () => {
   const navigate = useNavigate();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isFilterDialogOpen, setIsFilterDialogOpen] = useState(false);
+  const [filters, setFilters] = useState<FilterOptions>({
+    propertyType: 'all',
+    bedrooms: 'any',
+    minValue: undefined,
+    maxValue: undefined
+  });
+  const [sortOption, setSortOption] = useState<string>("newest");
+  
   // In a real implementation, this would fetch data from an API
   const { data: appraisals, isLoading, error } = useQuery({
     queryKey: ["appraisal-feed"],
@@ -241,6 +369,52 @@ export const AppraisalFeed = () => {
       return mockAppraisals;
     },
   });
+  
+  // Filter and sort appraisals
+  const filteredAndSortedAppraisals = appraisals ? appraisals
+    .filter(appraisal => {
+      // Search term filter
+      if (searchTerm && !appraisal.property_address.toLowerCase().includes(searchTerm.toLowerCase())) {
+        return false;
+      }
+      
+      // Property type filter
+      if (filters.propertyType !== 'all' && appraisal.property_type !== filters.propertyType) {
+        return false;
+      }
+      
+      // Bedrooms filter
+      if (filters.bedrooms !== 'any' && appraisal.bedrooms < parseInt(filters.bedrooms)) {
+        return false;
+      }
+      
+      // Min value filter
+      if (filters.minValue !== undefined && appraisal.estimated_value_min < filters.minValue) {
+        return false;
+      }
+      
+      // Max value filter
+      if (filters.maxValue !== undefined && appraisal.estimated_value_max > filters.maxValue) {
+        return false;
+      }
+      
+      return true;
+    })
+    .sort((a, b) => {
+      // Sort by selected option
+      switch (sortOption) {
+        case "newest":
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        case "oldest":
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        case "highest-value":
+          return b.estimated_value_max - a.estimated_value_max;
+        case "lowest-value":
+          return a.estimated_value_min - b.estimated_value_min;
+        default:
+          return 0;
+      }
+    }) : [];
   
   if (isLoading) {
     return (
@@ -270,19 +444,92 @@ export const AppraisalFeed = () => {
   
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <h2 className="text-2xl font-bold">Appraisal Leads</h2>
-        <div className="flex space-x-2">
-          <Button variant="outline">Filter</Button>
-          <Button variant="outline">Sort</Button>
+        <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+          <div className="relative flex-1 sm:flex-none">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              type="search"
+              placeholder="Search by address..."
+              className="pl-8"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <Button 
+            variant="outline" 
+            onClick={() => setIsFilterDialogOpen(true)}
+            className="flex items-center"
+          >
+            <Filter className="mr-2 h-4 w-4" />
+            Filter
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="flex items-center">
+                {sortOption === "newest" && <SortDesc className="mr-2 h-4 w-4" />}
+                {sortOption === "oldest" && <SortAsc className="mr-2 h-4 w-4" />}
+                {sortOption === "highest-value" && <DollarSign className="mr-2 h-4 w-4" />}
+                {sortOption === "lowest-value" && <DollarSign className="mr-2 h-4 w-4" />}
+                Sort
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Sort By</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => setSortOption("newest")}>
+                Newest First
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortOption("oldest")}>
+                Oldest First
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortOption("highest-value")}>
+                Highest Value
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSortOption("lowest-value")}>
+                Lowest Value
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
       
-      <div>
-        {appraisals.map((appraisal) => (
-          <AppraisalCard key={appraisal.id} appraisal={appraisal} />
-        ))}
-      </div>
+      {filteredAndSortedAppraisals.length === 0 ? (
+        <div className="text-center py-12">
+          <h3 className="text-lg font-medium mb-2">No matching leads</h3>
+          <p className="text-muted-foreground mb-4">
+            No appraisal leads match your current search and filter criteria.
+          </p>
+          <Button 
+            variant="outline" 
+            onClick={() => {
+              setSearchTerm("");
+              setFilters({
+                propertyType: 'all',
+                bedrooms: 'any',
+                minValue: undefined,
+                maxValue: undefined
+              });
+            }}
+          >
+            Clear Filters
+          </Button>
+        </div>
+      ) : (
+        <div>
+          {filteredAndSortedAppraisals.map((appraisal) => (
+            <AppraisalCard key={appraisal.id} appraisal={appraisal} />
+          ))}
+        </div>
+      )}
+      
+      <FilterDialog 
+        isOpen={isFilterDialogOpen} 
+        onOpenChange={setIsFilterDialogOpen} 
+        filters={filters} 
+        setFilters={setFilters} 
+      />
     </div>
   );
 }; 
