@@ -188,21 +188,9 @@ Format your response with clear section headings (## MARKET ANALYSIS, ## PROPERT
   return prompt;
 }
 
-// Function to call the AI service using the ai-integration Edge Function
+// Function to call the AI service
 async function callAIService(
-  property: {
-    address: string;
-    propertyType: string;
-    bedrooms: number;
-    bathrooms: number;
-    landSize: number;
-    yearBuilt?: number;
-    title?: string;
-    zoning?: string;
-    council?: string;
-    condition?: string;
-    features?: string[];
-  },
+  property: StandardizedPropertyData['property'],
   comparables: Array<{
     address: string;
     salePrice: number;
@@ -215,41 +203,105 @@ async function callAIService(
     features?: string[];
   }>,
   marketTrends: {
-    medianPrice?: number;
-    priceChange3Months?: number;
-    priceChange12Months?: number;
-    averageDaysOnMarket?: number;
-    demandLevel?: string;
-    suburbName?: string;
-    regionName?: string;
-  },
-  isFullAppraisal: boolean
+    medianPrice: number;
+    priceChange3Months: number;
+    priceChange12Months: number;
+    averageDaysOnMarket: number;
+    demandLevel: string;
+    suburbName: string;
+    regionName: string;
+  }
 ): Promise<AIGeneratedContent> {
   try {
     // Create a Supabase client
     const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? ""
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        global: {
+          headers: { Authorization: `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}` },
+        },
+      }
     );
 
-    // Call the ai-integration Edge Function
+    // Call the AI integration function
     const { data, error } = await supabaseClient.functions.invoke('ai-integration', {
-      body: { property, comparables, marketTrends, isFullAppraisal }
+      body: {
+        property,
+        comparables,
+        marketTrends,
+        isFullAppraisal: true
+      }
     });
 
     if (error) {
-      throw error;
+      throw new Error(`Error calling AI integration: ${error.message}`);
     }
 
-    return data;
-  } catch (error) {
-    console.error("Error calling AI service:", error);
-    throw error;
+    // Parse the response
+    const aiResponse = data as AIGeneratedContent;
+    
+    return aiResponse;
+  } catch (error: unknown) {
+    console.error('Error calling AI service:', error);
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('Unknown error occurred while calling AI service');
   }
 }
 
 // Function to process the AI response and structure it for the database
-function processAIResponse(aiResponse: AIGeneratedContent, propertyData: StandardizedPropertyData): any {
+function processAIResponse(aiResponse: AIGeneratedContent, propertyData: StandardizedPropertyData): {
+  property_details: {
+    address: string;
+    suburb: string;
+    city: string;
+    postcode: string;
+    propertyType: string;
+    bedrooms: number;
+    bathrooms: number;
+    landArea: number;
+    floorArea: number;
+    yearBuilt: number;
+    title: string;
+    legalDescription: string;
+    zoning: string;
+    council: string;
+    lastSaleDate?: string;
+    lastSalePrice?: number;
+    description?: string;
+    features?: string[];
+  };
+  estimated_value_min: number;
+  estimated_value_max: number;
+  comparable_properties: Array<{
+    address: string;
+    salePrice: number;
+    bedrooms: number;
+    bathrooms: number;
+    buildingSize?: number;
+    saleDate: string;
+    distanceFromSubject: number;
+    yearBuilt: number;
+    landSize: number;
+    propertyType: string;
+    commentary: string;
+  }>;
+  market_analysis: {
+    medianPrice: number;
+    priceChange3Months: number;
+    priceChange12Months: number;
+    averageDaysOnMarket: number;
+    localMarketTrend: string;
+    demandLevel: string;
+    analysisText: string;
+    valueFactors: {
+      positive: string[];
+      negative: string[];
+    };
+  };
+} {
   // Extract the market analysis text
   const marketAnalysisText = aiResponse.marketAnalysis;
   
@@ -528,7 +580,7 @@ serve(async (req: Request) => {
     };
 
     // Call the AI service
-    const aiResponse = await callAIService(property, comparables, marketTrends, is_full_appraisal);
+    const aiResponse = await callAIService(property, comparables, marketTrends);
 
     // Process the AI response
     const processedData = processAIResponse(aiResponse, mockPropertyData);
@@ -562,7 +614,7 @@ serve(async (req: Request) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       }
     );
-  } catch (error) {
+  } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
     return new Response(
       JSON.stringify({ error: message }),

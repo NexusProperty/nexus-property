@@ -149,9 +149,12 @@ async function callVertexAI(prompt: string): Promise<string> {
     // In a real implementation, we would use the Google Cloud Vertex AI client
     // For now, we'll return a mock response
     return mockAIResponse(prompt);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error calling Vertex AI:", error);
-    throw error;
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error(`Unknown error occurred while calling Vertex AI: ${String(error)}`);
   }
 }
 
@@ -222,7 +225,14 @@ function parseAIResponse(response: string): AIGeneratedContent {
   
   // Extract comparable commentary
   const comparableCommentaryMatch = response.match(/## COMPARABLE COMMENTARY\n([\s\S]*?)(?=##|$)/);
-  const comparableCommentary = comparableCommentaryMatch ? comparableCommentaryMatch[1].trim() : "";
+  const comparableCommentaryText = comparableCommentaryMatch ? comparableCommentaryMatch[1].trim() : "";
+  
+  // Split the comparable commentary into an array of strings
+  // Each paragraph is treated as a separate commentary
+  const comparableCommentary = comparableCommentaryText
+    .split(/\n\n+/)
+    .map(paragraph => paragraph.trim())
+    .filter(paragraph => paragraph.length > 0);
   
   // Extract value factors
   const valueFactorsMatch = response.match(/## VALUE FACTORS\n([\s\S]*?)(?=##|$)/);
@@ -242,7 +252,7 @@ function parseAIResponse(response: string): AIGeneratedContent {
   return {
     marketAnalysis,
     propertyDescription,
-    comparableCommentary: [comparableCommentary], // Store as array for consistency
+    comparableCommentary,
     valueFactors: {
       positive: positiveFactors,
       negative: negativeFactors
@@ -288,11 +298,13 @@ serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" } 
       }
     );
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error processing request:", error);
     
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: errorMessage }),
       { 
         status: 500, 
         headers: { ...corsHeaders, "Content-Type": "application/json" } 

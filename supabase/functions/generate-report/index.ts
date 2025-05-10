@@ -33,11 +33,36 @@ interface ReportData {
     final_value?: number;
     agent_notes?: string;
     completion_notes?: string;
-    property_details?: any;
+    property_details?: {
+      yearBuilt?: number;
+      title?: string;
+      zoning?: string;
+      council?: string;
+      condition?: string;
+      features?: string[];
+    };
     report_url?: string | null;
     customer_id?: string | null;
-    comparable_properties?: any[] | null;
-    market_analysis?: any | null;
+    comparable_properties?: Array<{
+      address: string;
+      salePrice: number;
+      saleDate: string;
+      bedrooms: number;
+      bathrooms: number;
+      landSize: number;
+      buildingSize?: number;
+      distanceFromSubject: number;
+      features?: string[];
+    }> | null;
+    market_analysis?: {
+      marketAnalysis?: string;
+      propertyDescription?: string;
+      comparableCommentary?: string[];
+      valueFactors?: {
+        positive: string[];
+        negative: string[];
+      };
+    } | null;
   };
   agent?: {
     id: string;
@@ -355,7 +380,18 @@ function generateReportHTML(data: ReportData, isFullAppraisal: boolean): string 
     ${comparableProperties.length > 0 ? `
     <div class="section">
       <div class="section-title">Comparable Properties</div>
-      ${comparableProperties.map((comp: any, index: number) => `
+      ${comparableProperties.map((comp: {
+        address: string;
+        salePrice: number;
+        saleDate: string;
+        bedrooms: number;
+        bathrooms: number;
+        landSize: number;
+        buildingSize?: number;
+        distanceFromSubject: number;
+        features?: string[];
+        commentary?: string;
+      }, index: number) => `
       <div class="comparable">
         <div class="comparable-title">Comparable ${index + 1}: ${comp.address}</div>
         <div class="comparable-details">
@@ -581,7 +617,7 @@ serve(async (req: Request) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       }
     );
-  } catch (error) {
+  } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
     return new Response(
       JSON.stringify({ error: message }),
