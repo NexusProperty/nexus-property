@@ -1,0 +1,101 @@
+# Overview
+AppraisalHub is a property appraisal platform designed for real estate agents and customers. It streamlines the process of generating, managing, and delivering property appraisals by integrating multiple data sources, automating valuation logic, and providing professional report generation. The platform aims to save agents time, improve accuracy, and deliver a seamless experience for both agents and customers.
+
+# Core Features
+**MVP Features (in scope):**
+- User authentication and role management (Agent, Customer, Admin) *(Completed)*
+- Navigation and routing for all main portals *(Completed)*
+- Appraisal Feed: Agents can view and claim leads *(Completed)*
+- Appraisal Request: Customers can request new appraisals *(Completed)*
+- Appraisal Management: Agents can view, manage, and complete appraisals *(Completed)*
+- Team Management: CRUD for teams and members *(Completed)*
+- User Profile Management: View and edit profile, upload avatar *(Completed)*
+- Dashboard: Real-time metrics and analytics for agents *(Completed)*
+- Data Integrations (Mock):
+  - CoreLogic NZ (property, sales, AVM, market data) *(Completed)*
+  - REINZ (market stats, comparables) *(Completed)*
+  - Council, School Zones, Mapping Services *(Completed)*
+- Data Ingestion & Standardization Pipeline *(Completed)*
+- Core Processing & Analysis Logic (algorithmic + AI prompt engineering) *(Completed)*
+- AI Integration (Google Vertex AI/Gemini) for market analysis, property description, and commentary *(Completed)*
+- Automated Report Generation (HTML to PDF, storage, report viewer) *(Completed)*
+- Appraisal Report Display in UI *(Completed)*
+- UI/UX: Responsive design, modals, toasts, error/empty/loading states *(Completed)*
+
+**MVP Features (remaining):**
+- Implement comprehensive Row-Level Security (RLS) policies for all database tables
+- Integration management UI components (for managing data integrations)
+- Testing infrastructure:
+  - Unit tests for frontend, backend, and integrations
+  - Integration and E2E tests for key user flows
+  - Security and performance testing
+- Production deployment setup (Supabase, frontend hosting, environment variables)
+- CI/CD pipeline for automated build, test, and deploy
+- Monitoring, logging, and alerting setup
+- User and developer documentation
+
+# User Experience
+- **User Personas:**
+  - Real Estate Agent: Manages appraisals, claims leads, generates reports
+  - Customer: Requests appraisals, views limited reports
+  - Admin: Manages users, teams, and system settings
+- **Key User Flows:**
+  - Agent: Login → View dashboard → Claim lead → Complete appraisal → Generate report
+  - Customer: Sign up → Request appraisal → View report
+  - Admin: Login → Manage users/teams → View analytics
+- **UI/UX Considerations:**
+  - Responsive design (Tailwind CSS)
+  - Clear navigation and feedback (modals, toasts)
+  - Accessible forms and data tables
+
+# Technical Architecture
+- **System Components:**
+  - Frontend: React, TypeScript, Tailwind CSS
+  - Backend: Supabase (database, Edge Functions)
+  - Integrations: Mock services for CoreLogic, REINZ, Council, School Zones, Mapping
+  - AI: Google Vertex AI (Gemini) integration
+  - PDF Generation: HTML templating + PDF library
+- **Data Models:**
+  - Users, Teams, Appraisals, Profiles, Integrations, Reports
+- **APIs & Integrations:**
+  - Supabase Edge Functions for processing, AI, and report generation
+  - External data source mocks (replace with real APIs post-MVP)
+- **Infrastructure:**
+  - Supabase project (database, storage, auth)
+  - Frontend hosting (Vercel/Netlify)
+  - CI/CD (GitHub Actions or similar)
+
+# Development Roadmap
+- **MVP Requirements:**
+  - Complete RLS policies for all tables
+  - Build integration management UI
+  - Implement comprehensive testing (unit, integration, E2E, security, performance)
+  - Set up production deployment, CI/CD, monitoring, and documentation
+- **Future Enhancements:**
+  - Replace mock integrations with live API connections
+  - Advanced analytics and reporting features
+  - Enhanced user roles and permissions
+  - Additional data sources and integrations
+  - Mobile app support
+- **Completed Phases:**
+  - All core frontend and backend features, integrations, AI/reporting, and UI/UX (see above)
+
+# Logical Dependency Chain
+1. Finalize and enforce RLS policies (foundation for secure data access)
+2. Build integration management UI (enables admin control over data sources)
+3. Implement and verify testing infrastructure (ensures reliability)
+4. Set up production deployment, CI/CD, and monitoring (operational readiness)
+5. Complete user and developer documentation
+
+# Risks and Mitigations
+- **Technical challenges:**
+  - RLS policy complexity → Mitigate with thorough testing and Supabase documentation
+  - Integration with live APIs (post-MVP) → Use mocks for MVP, plan for phased rollout
+- **MVP scope creep:**
+  - Strictly limit MVP to listed features; defer enhancements
+- **Resource constraints:**
+  - Prioritize critical path tasks; automate testing and deployment
+
+# Appendix
+- See `doc/Development Plan 1.md` for detailed breakdowns, implementation notes, and completed task lists.
+- Technical specifications and research findings are documented in the development plan and codebase.
