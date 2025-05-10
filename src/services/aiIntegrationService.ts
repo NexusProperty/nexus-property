@@ -1,5 +1,5 @@
-import { supabase } from '../lib/supabaseClient';
-import toast from 'react-hot-toast';
+import { supabase } from '../integrations/supabase/client';
+import { toast } from "@/components/ui/use-toast";
 
 /**
  * Service for integrating with Google Cloud Vertex AI (Gemini)
@@ -51,7 +51,10 @@ export const aiIntegrationService = {
   ) {
     try {
       // Show loading toast
-      const loadingToast = toast.loading('Generating AI content...');
+      toast({
+        title: "Generating AI content",
+        description: "Please wait while we generate the appraisal content...",
+      });
       
       // Call the Edge Function to generate AI content
       const { data, error } = await supabase.functions.invoke('ai-integration', {
@@ -59,17 +62,28 @@ export const aiIntegrationService = {
       });
       
       if (error) {
-        toast.error('Failed to generate AI content: ' + error.message, { id: loadingToast });
+        toast({
+          title: "Error generating AI content",
+          description: error.message,
+          variant: "destructive"
+        });
         throw error;
       }
       
       // Show success toast
-      toast.success('AI content generated successfully!', { id: loadingToast });
+      toast({
+        title: "AI content generated",
+        description: "The appraisal content has been generated successfully.",
+      });
       
       return data;
     } catch (error) {
       console.error('Error generating AI content:', error);
-      toast.error('Failed to generate AI content');
+      toast({
+        title: "Error generating AI content",
+        description: "An unexpected error occurred while generating the appraisal content.",
+        variant: "destructive"
+      });
       throw error;
     }
   }

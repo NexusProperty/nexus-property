@@ -1,5 +1,5 @@
-import { supabase } from '../lib/supabaseClient';
-import toast from 'react-hot-toast';
+import { supabase } from '../integrations/supabase/client';
+import { toast } from "@/components/ui/use-toast";
 
 /**
  * Service for generating and managing appraisal reports
@@ -14,7 +14,10 @@ export const reportGenerationService = {
   async generateReport(appraisalId: string, isFullAppraisal: boolean = true) {
     try {
       // Show loading toast
-      const loadingToast = toast.loading('Generating report...');
+      toast({
+        title: "Generating report...",
+        description: "Please wait while we generate your report.",
+      });
       
       // Call the Edge Function to generate the report
       const { data, error } = await supabase.functions.invoke('generate-report', {
@@ -22,17 +25,28 @@ export const reportGenerationService = {
       });
       
       if (error) {
-        toast.error('Failed to generate report: ' + error.message, { id: loadingToast });
+        toast({
+          title: "Error",
+          description: "Failed to generate report: " + error.message,
+          variant: "destructive",
+        });
         throw error;
       }
       
       // Show success toast
-      toast.success('Report generated successfully!', { id: loadingToast });
+      toast({
+        title: "Success",
+        description: "Report generated successfully!",
+      });
       
       return data;
     } catch (error) {
       console.error('Error generating report:', error);
-      toast.error('Failed to generate report');
+      toast({
+        title: "Error",
+        description: "Failed to generate report",
+        variant: "destructive",
+      });
       throw error;
     }
   },
@@ -45,7 +59,10 @@ export const reportGenerationService = {
   async downloadReport(reportUrl: string, fileName?: string) {
     try {
       // Show loading toast
-      const loadingToast = toast.loading('Downloading report...');
+      toast({
+        title: "Downloading report...",
+        description: "Please wait while we download your report.",
+      });
       
       // Fetch the report
       const response = await fetch(reportUrl);
@@ -78,10 +95,17 @@ export const reportGenerationService = {
       document.body.removeChild(link);
       
       // Show success toast
-      toast.success('Report downloaded successfully!', { id: loadingToast });
+      toast({
+        title: "Success",
+        description: "Report downloaded successfully!",
+      });
     } catch (error) {
       console.error('Error downloading report:', error);
-      toast.error('Failed to download report');
+      toast({
+        title: "Error",
+        description: "Failed to download report",
+        variant: "destructive",
+      });
       throw error;
     }
   },

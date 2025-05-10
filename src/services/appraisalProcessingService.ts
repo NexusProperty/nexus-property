@@ -1,5 +1,5 @@
 import { supabase } from '../integrations/supabase/client';
-import { toast } from 'react-hot-toast';
+import { toast } from "@/components/ui/use-toast";
 
 /**
  * Service for processing appraisals using AI
@@ -14,7 +14,10 @@ export const appraisalProcessingService = {
   async processAppraisal(appraisalId: string, isFullAppraisal: boolean = true) {
     try {
       // Show loading toast
-      const loadingToast = toast.loading('Processing appraisal...');
+      toast({
+        title: "Processing appraisal...",
+        description: "Please wait while we process your appraisal.",
+      });
       
       // Call the Edge Function
       const { data, error } = await supabase.functions.invoke('process-appraisal', {
@@ -22,17 +25,28 @@ export const appraisalProcessingService = {
       });
       
       if (error) {
-        toast.error(`Error processing appraisal: ${error.message}`, { id: loadingToast });
+        toast({
+          title: "Error",
+          description: `Error processing appraisal: ${error.message}`,
+          variant: "destructive",
+        });
         throw error;
       }
       
       // Show success toast
-      toast.success('Appraisal processed successfully!', { id: loadingToast });
+      toast({
+        title: "Success",
+        description: "Appraisal processed successfully!",
+      });
       
       return data;
     } catch (error) {
       console.error('Error processing appraisal:', error);
-      toast.error('Failed to process appraisal. Please try again.');
+      toast({
+        title: "Error",
+        description: "Failed to process appraisal. Please try again.",
+        variant: "destructive",
+      });
       throw error;
     }
   },
