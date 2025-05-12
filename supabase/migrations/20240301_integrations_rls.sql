@@ -6,6 +6,8 @@ CREATE TABLE IF NOT EXISTS integrations (
   type text NOT NULL,
   status text NOT NULL DEFAULT 'inactive',
   config jsonb,
+  user_id uuid NOT NULL,
+  team_id uuid,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NOT NULL DEFAULT now()
 );
