@@ -1,3 +1,12 @@
+CREATE TABLE IF NOT EXISTS team_members (
+  team_id UUID NOT NULL,
+  user_id UUID NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc', now()) NOT NULL,
+  PRIMARY KEY (team_id, user_id),
+  FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE,
+  FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE
+);
+
 -- Enable Row Level Security for team_members table
 ALTER TABLE team_members ENABLE ROW LEVEL SECURITY;
 
