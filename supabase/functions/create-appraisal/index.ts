@@ -1,3 +1,4 @@
+
 // Follow this setup guide to integrate the Deno runtime into your application:
 // https://deno.land/manual/examples/hello_world
 
@@ -67,6 +68,7 @@ serve(async (req: Request) => {
       .single();
 
     if (profileError) {
+      console.error("Error fetching user profile:", profileError);
       return new Response(
         JSON.stringify({ error: "Error fetching user profile" }),
         {
@@ -85,12 +87,12 @@ serve(async (req: Request) => {
         status: "processing",
         customer_id: profile.role === "customer" ? user.id : null,
         agent_id: profile.role === "agent" ? user.id : null,
-        additional_notes,
       })
       .select()
       .single();
 
     if (appraisalError) {
+      console.error("Error creating appraisal:", appraisalError);
       return new Response(
         JSON.stringify({ error: "Error creating appraisal" }),
         {
@@ -100,9 +102,7 @@ serve(async (req: Request) => {
       );
     }
 
-    // TODO: Trigger the data ingestion/AI process (Task 3.4)
-    // This would be implemented in a future phase
-
+    // Return the created appraisal
     return new Response(
       JSON.stringify({ data: appraisal }),
       {
@@ -111,6 +111,7 @@ serve(async (req: Request) => {
       }
     );
   } catch (error) {
+    console.error("Unexpected error:", error);
     const message = error instanceof Error ? error.message : String(error);
     return new Response(
       JSON.stringify({ error: message }),
@@ -120,4 +121,4 @@ serve(async (req: Request) => {
       }
     );
   }
-}); 
+});

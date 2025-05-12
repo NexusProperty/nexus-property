@@ -1,10 +1,14 @@
+
 CREATE TABLE IF NOT EXISTS team_members (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   team_id UUID NOT NULL,
   user_id UUID NOT NULL,
+  role text NOT NULL DEFAULT 'member',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc', now()) NOT NULL,
-  PRIMARY KEY (team_id, user_id),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc', now()) NOT NULL,
   FOREIGN KEY (team_id) REFERENCES teams(id) ON DELETE CASCADE,
-  FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE
+  FOREIGN KEY (user_id) REFERENCES profiles(id) ON DELETE CASCADE,
+  UNIQUE(team_id, user_id)
 );
 
 -- Enable Row Level Security for team_members table
@@ -109,4 +113,4 @@ USING (
     SELECT 1 FROM profiles
     WHERE id = auth.uid() AND role = 'admin'
   )
-); 
+);

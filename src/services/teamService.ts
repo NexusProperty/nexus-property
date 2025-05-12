@@ -1,21 +1,37 @@
 import { supabase } from "@/lib/supabase";
 import { Team, TeamMember } from "@/types/team";
+import { toast } from "@/components/ui/use-toast";
 
 /**
  * Fetches all teams for the current user
  */
 export const fetchUserTeams = async (): Promise<Team[]> => {
-  const { data, error } = await supabase
-    .from("teams")
-    .select("*")
-    .order("created_at", { ascending: false });
+  try {
+    const { data, error } = await supabase
+      .from("teams")
+      .select("*")
+      .order("created_at", { ascending: false });
 
-  if (error) {
-    console.error("Error fetching teams:", error);
-    throw error;
+    if (error) {
+      console.error("Error fetching teams:", error);
+      toast({
+        title: "Error fetching teams",
+        description: error.message,
+        variant: "destructive"
+      });
+      throw error;
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error("Unexpected error fetching teams:", error);
+    toast({
+      title: "Error fetching teams",
+      description: "An unexpected error occurred while fetching teams.",
+      variant: "destructive"
+    });
+    return [];
   }
-
-  return data || [];
 };
 
 /**
@@ -117,23 +133,38 @@ export const deleteTeam = async (teamId: string): Promise<void> => {
 /**
  * Adds a member to a team
  */
-export const addTeamMember = async (teamId: string, profileId: string, role: string = "member"): Promise<TeamMember> => {
-  const { data, error } = await supabase
-    .from("team_members")
-    .insert({
-      team_id: teamId,
-      profile_id: profileId,
-      role
-    })
-    .select()
-    .single();
+export const addTeamMember = async (teamId: string, userId: string, role: string = "member"): Promise<TeamMember> => {
+  try {
+    const { data, error } = await supabase
+      .from("team_members")
+      .insert({
+        team_id: teamId,
+        user_id: userId,
+        role
+      })
+      .select()
+      .single();
 
-  if (error) {
-    console.error(`Error adding member to team ${teamId}:`, error);
+    if (error) {
+      console.error(`Error adding member to team ${teamId}:`, error);
+      toast({
+        title: "Error adding team member",
+        description: error.message,
+        variant: "destructive"
+      });
+      throw error;
+    }
+
+    return data;
+  } catch (error) {
+    console.error(`Unexpected error adding member to team ${teamId}:`, error);
+    toast({
+      title: "Error adding team member",
+      description: "An unexpected error occurred while adding the team member.",
+      variant: "destructive"
+    });
     throw error;
   }
-
-  return data;
 };
 
 /**
@@ -170,4 +201,4 @@ export const removeTeamMember = async (teamId: string, profileId: string): Promi
     console.error(`Error removing member from team ${teamId}:`, error);
     throw error;
   }
-}; 
+};

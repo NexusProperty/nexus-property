@@ -24,7 +24,13 @@ BEGIN
     END IF;
 END $$;
 
--- Down migration (manual):
--- To reverse, drop the columns if needed:
--- ALTER TABLE integrations DROP COLUMN IF EXISTS provider;
--- ALTER TABLE integrations DROP CONSTRAINT IF EXISTS integrations_user_id_fkey; 
+-- Add foreign key constraint for team_id if not exists
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.table_constraints 
+        WHERE table_name='integrations' AND constraint_type='FOREIGN KEY' AND constraint_name='integrations_team_id_fkey'
+    ) THEN
+        ALTER TABLE integrations ADD CONSTRAINT integrations_team_id_fkey FOREIGN KEY (team_id) REFERENCES teams(id);
+    END IF;
+END $$;
