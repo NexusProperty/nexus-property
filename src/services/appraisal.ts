@@ -4,6 +4,8 @@ import { Database } from '../types/supabase';
 type Appraisal = Database['public']['Tables']['appraisals']['Row'];
 type AppraisalInsert = Database['public']['Tables']['appraisals']['Insert'];
 type AppraisalUpdate = Database['public']['Tables']['appraisals']['Update'];
+type ComparableProperty = Database['public']['Tables']['comparable_properties']['Row'];
+type ComparablePropertyInsert = Database['public']['Tables']['comparable_properties']['Insert'];
 
 export interface AppraisalResult<T = unknown> {
   success: boolean;
@@ -12,14 +14,14 @@ export interface AppraisalResult<T = unknown> {
 }
 
 /**
- * Get a specific appraisal by ID for the authenticated user
+ * Get an appraisal by ID
  */
-export async function getAppraisal(appraisalId: string): Promise<AppraisalResult<Appraisal>> {
+export async function getAppraisal(id: string): Promise<AppraisalResult<Appraisal>> {
   try {
     const { data, error } = await supabase
       .from('appraisals')
       .select('*')
-      .eq('id', appraisalId)
+      .eq('id', id)
       .single();
 
     if (error) throw error;
@@ -40,7 +42,51 @@ export async function getAppraisal(appraisalId: string): Promise<AppraisalResult
 }
 
 /**
- * Get all appraisals for the authenticated user
+ * Get appraisal with comparable properties
+ */
+export async function getAppraisalWithComparables(id: string): Promise<AppraisalResult<{
+  appraisal: Appraisal;
+  comparables: ComparableProperty[];
+}>> {
+  try {
+    // Get the appraisal
+    const { data: appraisal, error: appraisalError } = await supabase
+      .from('appraisals')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (appraisalError) throw appraisalError;
+
+    // Get the comparable properties
+    const { data: comparables, error: comparablesError } = await supabase
+      .from('comparable_properties')
+      .select('*')
+      .eq('appraisal_id', id)
+      .order('similarity_score', { ascending: false });
+
+    if (comparablesError) throw comparablesError;
+
+    return {
+      success: true,
+      error: null,
+      data: {
+        appraisal,
+        comparables: comparables || [],
+      },
+    };
+  } catch (error) {
+    const err = error as Error;
+    return {
+      success: false,
+      error: err.message,
+      data: null,
+    };
+  }
+}
+
+/**
+ * Get all appraisals for the current user
  */
 export async function getUserAppraisals(userId: string): Promise<AppraisalResult<Appraisal[]>> {
   try {
@@ -70,9 +116,7 @@ export async function getUserAppraisals(userId: string): Promise<AppraisalResult
 /**
  * Create a new appraisal
  */
-export async function createAppraisal(
-  appraisal: Omit<AppraisalInsert, 'id' | 'created_at' | 'updated_at'>
-): Promise<AppraisalResult<Appraisal>> {
+export async function createAppraisal(appraisal: AppraisalInsert): Promise<AppraisalResult<Appraisal>> {
   try {
     const { data, error } = await supabase
       .from('appraisals')
@@ -98,19 +142,107 @@ export async function createAppraisal(
 }
 
 /**
- * Update an existing appraisal
+ * Update an appraisal
  */
 export async function updateAppraisal(
-  appraisalId: string,
+  id: string,
   updates: AppraisalUpdate
 ): Promise<AppraisalResult<Appraisal>> {
   try {
     const { data, error } = await supabase
       .from('appraisals')
       .update(updates)
-      .eq('id', appraisalId)
+      .eq('id', id)
       .select()
       .single();
+
+    if (error) throw error;
+
+    return {
+      success: true,
+      error: null,
+      data,
+    };
+  } catch (error) {
+    const err = error as Error;
+    return {
+      success: false,
+      error: err.message,
+      data: null,
+    };
+  }
+}
+
+/**
+ * Delete an appraisal
+ */
+export async function deleteAppraisal(id: string): Promise<AppraisalResult<null>> {
+  try {
+    const { error } = await supabase
+      .from('appraisals')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+
+    return {
+      success: true,
+      error: null,
+      data: null,
+    };
+  } catch (error) {
+    const err = error as Error;
+    return {
+      success: false,
+      error: err.message,
+      data: null,
+    };
+  }
+}
+
+/**
+ * Add comparable properties to an appraisal
+ */
+export async function addComparableProperties(
+  comparables: ComparablePropertyInsert[]
+): Promise<AppraisalResult<ComparableProperty[]>> {
+  try {
+    const { data, error } = await supabase
+      .from('comparable_properties')
+      .insert(comparables)
+      .select();
+
+    if (error) throw error;
+
+    return {
+      success: true,
+      error: null,
+      data,
+    };
+  } catch (error) {
+    const err = error as Error;
+    return {
+      success: false,
+      error: err.message,
+      data: null,
+    };
+  }
+}
+
+/**
+ * Search appraisals
+ */
+export async function searchAppraisals(
+  searchTerm: string,
+  userId: string
+): Promise<AppraisalResult<Appraisal[]>> {
+  try {
+    const { data, error } = await supabase
+      .from('appraisals')
+      .select('*')
+      .eq('user_id', userId)
+      .or(`property_address.ilike.%${searchTerm}%,property_suburb.ilike.%${searchTerm}%,property_city.ilike.%${searchTerm}%`)
+      .order('created_at', { ascending: false });
 
     if (error) throw error;
 
