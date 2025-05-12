@@ -39,7 +39,8 @@ import {
   MapPin,
   Calendar,
   Maximize,
-  Globe
+  Globe,
+  PencilIcon
 } from 'lucide-react';
 
 type Property = Database['public']['Tables']['properties']['Row'];
@@ -184,10 +185,11 @@ export default function PropertyDetail() {
         
         <div className="flex space-x-2">
           <Button
-            variant="outline"
-            onClick={() => navigate(`/dashboard/properties/${id}/edit`)}
+            variant="secondary"
+            onClick={() => navigate(`/dashboard/properties/edit/${id}`)}
+            className="ml-2"
           >
-            <Edit className="h-4 w-4 mr-2" />
+            <PencilIcon className="h-4 w-4 mr-2" />
             Edit
           </Button>
           
