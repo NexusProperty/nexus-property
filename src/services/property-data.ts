@@ -1,4 +1,6 @@
 import { supabase } from '../lib/supabase';
+import { updateAppraisalStatus } from './appraisal';
+import { Json } from '../types/supabase';
 
 interface PropertyDataRequest {
   address: string;
@@ -105,10 +107,27 @@ export async function updateAppraisalWithPropertyData(
       throw new Error('Not authenticated');
     }
 
+    // Update status to indicate we're fetching property data
+    await updateAppraisalStatus(
+      appraisalId,
+      'processing',
+      { reason: 'Fetching property data from external API' }
+    );
+
     // Call the Supabase Edge Function to fetch property data
     const response = await fetchPropertyData(propertyData);
 
     if (!response.success || !response.data) {
+      // Update status to indicate error
+      await updateAppraisalStatus(
+        appraisalId,
+        'error',
+        { 
+          reason: 'Failed to fetch property data',
+          metadata: { error: response.error } 
+        }
+      );
+      
       throw new Error(response.error || 'Failed to fetch property data');
     }
 
@@ -126,9 +145,13 @@ export async function updateAppraisalWithPropertyData(
         year_built: propertyDetails.yearBuilt,
         metadata: {
           ...propertyDetails,
-          market_trends: marketTrends,
-        },
-        status: 'processing', // Update status to indicate processing
+          market_trends: {
+            medianPrice: marketTrends.medianPrice,
+            annualGrowth: marketTrends.annualGrowth,
+            salesVolume: marketTrends.salesVolume,
+            daysOnMarket: marketTrends.daysOnMarket
+          }
+        } as Json,
       })
       .eq('id', appraisalId);
 
@@ -148,10 +171,11 @@ export async function updateAppraisalWithPropertyData(
       land_size: comp.landSize,
       floor_area: comp.floorArea,
       year_built: comp.yearBuilt,
-      sale_date: comp.saleDate ? new Date(comp.saleDate) : null,
+      sale_date: comp.saleDate ? comp.saleDate : null,
       sale_price: comp.salePrice,
       similarity_score: comp.similarityScore,
       image_url: comp.imageUrl,
+      metadata: {} as Json
     }));
 
     const { error: comparablesError } = await supabase
@@ -161,6 +185,19 @@ export async function updateAppraisalWithPropertyData(
     if (comparablesError) {
       throw comparablesError;
     }
+
+    // Update status to indicate property data was fetched successfully
+    await updateAppraisalStatus(
+      appraisalId,
+      'data_ready',
+      { 
+        reason: 'Property data fetched successfully',
+        metadata: { 
+          property_count: 1,
+          comparable_count: comparableProperties.length 
+        }
+      }
+    );
 
     // Success
     return { success: true };

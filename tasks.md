@@ -268,8 +268,8 @@ A task is considered done when all of the following criteria are met:
 ## Current Focus
 - [x] Appraisal Core Functionality - Phase 2
   - [x] Implement valuation algorithm in Edge Function
-  - [ ] Create automatic appraisal status updates
-  - [ ] Add notifications for appraisal status changes
+  - [x] Create automatic appraisal status updates
+  - [x] Add notifications for appraisal status changes
   - [ ] Implement real-time updates using Supabase Realtime
 
 - [ ] AI Integration
@@ -358,8 +358,8 @@ The project involves multiple user roles, complex data flows, AI integration, an
 ## Current Focus
 - [x] Appraisal Core Functionality - Phase 2
   - [x] Implement valuation algorithm in Edge Function
-  - [ ] Create automatic appraisal status updates
-  - [ ] Add notifications for appraisal status changes
+  - [x] Create automatic appraisal status updates
+  - [x] Add notifications for appraisal status changes
   - [ ] Implement real-time updates using Supabase Realtime
 
 - [ ] AI Integration

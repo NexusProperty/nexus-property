@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase';
-import { getAppraisalWithComparables } from './appraisal';
+import { getAppraisalWithComparables, updateAppraisalStatus } from './appraisal';
 import { Database } from '@/types/supabase';
 
 // Database types
@@ -86,6 +86,13 @@ export async function requestPropertyValuation(appraisalId: string): Promise<Val
       throw new Error('Not authenticated');
     }
 
+    // Update appraisal status to 'awaiting_valuation'
+    await updateAppraisalStatus(
+      appraisalId,
+      'awaiting_valuation',
+      { reason: 'Valuation algorithm processing started' }
+    );
+
     // Fetch appraisal with comparable properties
     const appraisalData = await getAppraisalWithComparables(appraisalId);
     
@@ -148,7 +155,55 @@ export async function requestPropertyValuation(appraisalId: string): Promise<Val
     });
     
     if (error) {
+      // Update appraisal status to indicate error
+      await updateAppraisalStatus(
+        appraisalId,
+        'error',
+        { 
+          reason: 'Valuation algorithm failed',
+          metadata: { error: error.message }
+        }
+      );
+      
       throw error;
+    }
+    
+    // If successful, update the appraisal with the valuation results
+    if (data.success && data.data) {
+      const { 
+        valuationLow, 
+        valuationHigh, 
+        valuationConfidence 
+      } = data.data;
+      
+      // Update the appraisal with the valuation results
+      const { error: updateError } = await supabase
+        .from('appraisals')
+        .update({
+          valuation_low: valuationLow,
+          valuation_high: valuationHigh,
+          valuation_confidence: valuationConfidence,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', appraisalId);
+        
+      if (updateError) {
+        console.error('Error updating appraisal with valuation results:', updateError);
+      } else {
+        // Update status to valuation_complete
+        await updateAppraisalStatus(
+          appraisalId,
+          'valuation_complete',
+          { 
+            reason: 'Valuation algorithm completed successfully',
+            metadata: { 
+              valuationLow,
+              valuationHigh,
+              valuationConfidence
+            }
+          }
+        );
+      }
     }
     
     return data as ValuationResponse;
