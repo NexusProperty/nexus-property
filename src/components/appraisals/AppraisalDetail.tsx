@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getAppraisalWithComparables, deleteAppraisal, getAppraisalReport } from '@/services/appraisal';
 import { updateAppraisalWithPropertyData } from '@/services/property-data';
+import { requestPropertyValuation, isEligibleForValuation } from '@/services/property-valuation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Database } from '@/types/supabase';
 
@@ -262,35 +263,48 @@ export function AppraisalDetail() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
-  
+  const [isRequestingValuation, setIsRequestingValuation] = useState(false);
+  const [valuationEligibility, setValuationEligibility] = useState<{ 
+    eligible: boolean; 
+    reasons: string[] 
+  }>({ eligible: false, reasons: [] });
+
   // Fetch appraisal data
   const fetchAppraisal = async () => {
     if (!id) return;
-    
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const result = await getAppraisalWithComparables(id);
+
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        const result = await getAppraisalWithComparables(id);
       
-      if (result.success && result.data) {
-        setAppraisal(result.data.appraisal);
-        setComparables(result.data.comparables);
-      } else {
-        setError(result.error || 'Failed to load appraisal');
-      }
-    } catch (err) {
+        if (result.success && result.data) {
+          setAppraisal(result.data.appraisal);
+          setComparables(result.data.comparables);
+        } else {
+          setError(result.error || 'Failed to load appraisal');
+        }
+      } catch (err) {
       console.error('Error loading appraisal:', err);
-      setError('An unexpected error occurred');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
+        setError('An unexpected error occurred');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
   // Load appraisal on mount
   useEffect(() => {
     fetchAppraisal();
   }, [id]);
+
+  // Check eligibility for valuation when appraisal or comparables change
+  useEffect(() => {
+    if (appraisal && comparables) {
+      const eligibility = isEligibleForValuation(appraisal, comparables.length);
+      setValuationEligibility(eligibility);
+    }
+  }, [appraisal, comparables]);
 
   // Handle fetching property data
   const handleFetchPropertyData = async () => {
@@ -390,6 +404,43 @@ export function AppraisalDetail() {
       });
     } finally {
       setIsGeneratingReport(false);
+    }
+  };
+
+  // Handle requesting a valuation
+  const handleRequestValuation = async () => {
+    if (!id) return;
+    
+    setIsRequestingValuation(true);
+    
+    try {
+      const result = await requestPropertyValuation(id);
+      
+      if (result.success && result.data) {
+        toast({
+          title: 'Valuation Complete',
+          description: `Estimated value: $${result.data.valuationLow.toLocaleString()} - $${result.data.valuationHigh.toLocaleString()}`,
+        });
+        
+        // Refresh the appraisal data to show the new valuation
+        fetchAppraisal();
+      } else {
+        toast({
+          title: 'Error',
+          description: result.error || 'Failed to generate valuation',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('Error requesting valuation:', error);
+      
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'An unexpected error occurred',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsRequestingValuation(false);
     }
   };
 
@@ -1024,6 +1075,26 @@ export function AppraisalDetail() {
                 <>
                   <RefreshCw className="h-4 w-4 mr-2" />
                   Fetch Property Data
+                </>
+              )}
+            </Button>
+          )}
+          
+          {/* Add Valuation Button */}
+          {appraisal?.status !== 'pending' && !appraisal?.valuation_high && valuationEligibility.eligible && (
+            <Button 
+              onClick={handleRequestValuation}
+              disabled={isRequestingValuation}
+            >
+              {isRequestingValuation ? (
+                <>
+                  <Spinner className="h-4 w-4 mr-2" />
+                  Calculating Valuation...
+                </>
+              ) : (
+                <>
+                  <DollarSign className="h-4 w-4 mr-2" />
+                  Generate Valuation
                 </>
               )}
             </Button>
