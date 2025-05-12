@@ -1,17 +1,8 @@
+
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useQuery } from "@tanstack/react-query";
-import { fetchAdminDashboardMetrics, AdminDashboardMetrics } from "@/services/adminService";
-import { formatDistanceToNow } from "date-fns";
-import IntegrationList from '@/components/integrations/IntegrationList';
 
 const AdminDashboard: React.FC = () => {
-  // Fetch dashboard metrics
-  const { data: metrics, isLoading, isError } = useQuery<AdminDashboardMetrics>({
-    queryKey: ["admin-dashboard-metrics"],
-    queryFn: fetchAdminDashboardMetrics
-  });
-
   return (
     <div className="space-y-6">
       <div>
@@ -29,9 +20,7 @@ const AdminDashboard: React.FC = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">
-              {isLoading ? "..." : metrics?.totalUsers ?? "-"}
-            </div>
+            <div className="text-3xl font-bold">1,204</div>
           </CardContent>
         </Card>
         
@@ -42,9 +31,7 @@ const AdminDashboard: React.FC = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">
-              {isLoading ? "..." : metrics?.totalAgents ?? "-"}
-            </div>
+            <div className="text-3xl font-bold">126</div>
           </CardContent>
         </Card>
         
@@ -55,9 +42,7 @@ const AdminDashboard: React.FC = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">
-              {isLoading ? "..." : metrics?.totalCustomers ?? "-"}
-            </div>
+            <div className="text-3xl font-bold">1,078</div>
           </CardContent>
         </Card>
         
@@ -68,14 +53,12 @@ const AdminDashboard: React.FC = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">
-              {isLoading ? "..." : metrics?.monthlyAppraisals ?? "-"}
-            </div>
+            <div className="text-3xl font-bold">543</div>
           </CardContent>
         </Card>
       </div>
       
-      <div className="grid md:grid-cols-2 gap-4">
+      <div className="grid md:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
             <CardTitle>System Health</CardTitle>
@@ -84,43 +67,19 @@ const AdminDashboard: React.FC = () => {
             <div className="space-y-2">
               <div className="flex justify-between items-center">
                 <span>API Status</span>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  metrics?.systemHealth?.apiStatus === "Operational" 
-                    ? "bg-green-100 text-green-800" 
-                    : "bg-red-100 text-red-800"
-                }`}>
-                  {isLoading ? "..." : metrics?.systemHealth?.apiStatus ?? "-"}
-                </span>
+                <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">Operational</span>
               </div>
               <div className="flex justify-between items-center">
                 <span>Database</span>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  metrics?.systemHealth?.database === "Healthy" 
-                    ? "bg-green-100 text-green-800" 
-                    : "bg-red-100 text-red-800"
-                }`}>
-                  {isLoading ? "..." : metrics?.systemHealth?.database ?? "-"}
-                </span>
+                <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">Healthy</span>
               </div>
               <div className="flex justify-between items-center">
                 <span>External APIs</span>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  metrics?.systemHealth?.externalApis === "Connected" 
-                    ? "bg-green-100 text-green-800" 
-                    : "bg-red-100 text-red-800"
-                }`}>
-                  {isLoading ? "..." : metrics?.systemHealth?.externalApis ?? "-"}
-                </span>
+                <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">Connected</span>
               </div>
               <div className="flex justify-between items-center">
                 <span>Scheduled Tasks</span>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  metrics?.systemHealth?.scheduledTasks === "Running" 
-                    ? "bg-green-100 text-green-800" 
-                    : "bg-red-100 text-red-800"
-                }`}>
-                  {isLoading ? "..." : metrics?.systemHealth?.scheduledTasks ?? "-"}
-                </span>
+                <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full text-xs font-medium">Running</span>
               </div>
             </div>
           </CardContent>
@@ -132,38 +91,21 @@ const AdminDashboard: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {isLoading ? (
-                <div>Loading activity...</div>
-              ) : isError ? (
-                <div>Error loading activity</div>
-              ) : metrics?.recentActivity && metrics.recentActivity.length > 0 ? (
-                metrics.recentActivity.map((activity, index) => (
-                  <div 
-                    key={index} 
-                    className={`border-l-4 pl-3 py-1 ${
-                      activity.type === "user" ? "border-blue-500" :
-                      activity.type === "system" ? "border-green-500" :
-                      activity.type === "warning" ? "border-amber-500" :
-                      "border-gray-500"
-                    }`}
-                  >
-                    <p className="text-sm font-medium">{activity.message}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true })}
-                    </p>
-                  </div>
-                ))
-              ) : (
-                <div>No recent activity</div>
-              )}
+              <div className="border-l-4 border-blue-500 pl-3 py-1">
+                <p className="text-sm font-medium">New agent registered</p>
+                <p className="text-xs text-muted-foreground">Today, 10:32 AM</p>
+              </div>
+              <div className="border-l-4 border-green-500 pl-3 py-1">
+                <p className="text-sm font-medium">System backup completed</p>
+                <p className="text-xs text-muted-foreground">Today, 03:15 AM</p>
+              </div>
+              <div className="border-l-4 border-amber-500 pl-3 py-1">
+                <p className="text-sm font-medium">API rate limit reached</p>
+                <p className="text-xs text-muted-foreground">Yesterday, 4:23 PM</p>
+              </div>
             </div>
           </CardContent>
         </Card>
-      </div>
-      
-      <div className="mt-8">
-        <h2 className="text-2xl font-semibold mb-4">Integration Management</h2>
-        <IntegrationList />
       </div>
     </div>
   );

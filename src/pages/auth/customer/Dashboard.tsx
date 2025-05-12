@@ -1,5 +1,5 @@
+
 import React from "react";
-import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -22,9 +22,7 @@ const CustomerDashboard: React.FC = () => {
             <p>
               Get an instant, AI-powered market appraisal for your property in just a few minutes.
             </p>
-            <Button size="lg" asChild>
-              <Link to="/appraisals/create">Start Free Appraisal</Link>
-            </Button>
+            <Button size="lg">Start Free Appraisal</Button>
           </div>
         </CardContent>
       </Card>
@@ -37,9 +35,7 @@ const CustomerDashboard: React.FC = () => {
               <p className="font-medium">123 Example Street, Auckland</p>
               <p className="text-muted-foreground text-sm mt-1">Generated on May 1, 2025</p>
               <div className="mt-3">
-                <Button variant="outline" size="sm" asChild>
-                  <Link to="/appraisals">View All Appraisals</Link>
-                </Button>
+                <Button variant="outline" size="sm">View Report</Button>
               </div>
             </CardContent>
           </Card>

@@ -32,10 +32,7 @@ cd <YOUR_PROJECT_NAME>
 # Step 3: Install the necessary dependencies.
 npm i
 
-# Step 4: Create a .env file with the required environment variables.
-# See the Environment Variables section below for details.
-
-# Step 5: Start the development server with auto-reloading and an instant preview.
+# Step 4: Start the development server with auto-reloading and an instant preview.
 npm run dev
 ```
 
@@ -53,18 +50,6 @@ npm run dev
 - Click on "New codespace" to launch a new Codespace environment.
 - Edit files directly within the Codespace and commit and push your changes once you're done.
 
-## Environment Variables
-
-This project requires the following environment variables to be set in a `.env` file:
-
-```
-# Supabase Configuration
-VITE_SUPABASE_URL=your_supabase_url_here
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key_here
-```
-
-You can create a `.env` file in the root directory of the project and add these variables. Make sure to replace the placeholder values with your actual Supabase URL and anonymous key.
-
 ## What technologies are used for this project?
 
 This project is built with:
@@ -74,7 +59,6 @@ This project is built with:
 - React
 - shadcn-ui
 - Tailwind CSS
-- Supabase
 
 ## How can I deploy this project?
 
