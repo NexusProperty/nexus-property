@@ -1,37 +1,43 @@
+
 import { supabase } from '@/lib/supabase';
 import { toast } from "@/components/ui/use-toast";
+import { Database } from '@/integrations/supabase/types';
 
-/**
- * Integration object structure (for documentation only):
- * {
- *   id: string;
- *   user_id: string | null;
- *   team_id: string | null;
- *   name: string;
- *   provider: string;
- *   config: any;
- *   created_at: string;
- *   updated_at: string;
- * }
- */
-// NOTE: Type annotations are omitted in this file due to a TypeScript bug with recursive types (e.g., Json). See: https://github.com/microsoft/TypeScript/issues/34933
-// Cast to the correct type at the usage boundary (UI/business logic) if needed.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function mapToIntegration(raw) {
+// Interface for team member
+interface TeamMember {
+  team_id: string;
+}
+
+// Integration interface to properly type the data
+export interface Integration {
+  id: string;
+  user_id: string | null;
+  team_id: string | null;
+  name: string;
+  provider: string;
+  config: any; // Using any for config due to varying structure
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// Map database row to integration object with proper typing
+function mapToIntegration(raw: Database['public']['Tables']['integrations']['Row']): Integration {
   return {
-    id: (raw.id) ?? "",
-    user_id: (raw.user_id) ?? null,
-    team_id: (raw.team_id) ?? null,
-    name: (raw.name) ?? "",
-    provider: (raw.provider) ?? "",
+    id: raw.id ?? "",
+    user_id: raw.user_id ?? null,
+    team_id: raw.team_id ?? null,
+    name: raw.name ?? "",
+    provider: raw.provider ?? "",
     config: raw.config ?? {},
-    created_at: (raw.created_at) ?? "",
-    updated_at: (raw.updated_at) ?? "",
+    status: raw.status ?? "inactive",
+    created_at: raw.created_at ?? "",
+    updated_at: raw.updated_at ?? "",
   };
 }
 
 // Fetch all integrations for the current user (including team integrations)
-export async function fetchUserIntegrations() {
+export async function fetchUserIntegrations(): Promise<Integration[]> {
   try {
     const userResponse = await supabase.auth.getUser();
     const user = userResponse.data.user;
@@ -45,12 +51,6 @@ export async function fetchUserIntegrations() {
     if (userError) throw userError;
 
     // Fetch team IDs where user is a member
-    interface TeamMember {
-      team_id: string;
-    }
-    
-    // Use a type assertion to bypass the TypeScript error
-    // @ts-expect-error - Type instantiation is excessively deep and possibly infinite
     const { data: teamMemberships, error: teamError } = await supabase
       .from('team_members')
       .select('team_id')
@@ -60,7 +60,7 @@ export async function fetchUserIntegrations() {
     const teamIds = (teamMemberships as TeamMember[] || []).map((tm) => tm.team_id);
 
     // Fetch integrations for those teams
-    let teamIntegrations = [];
+    let teamIntegrations: Integration[] = [];
     if (teamIds.length > 0) {
       const { data, error } = await supabase
         .from("integrations")
@@ -86,7 +86,7 @@ export async function fetchUserIntegrations() {
 }
 
 // Create a new integration
-export async function createIntegration(integration) {
+export async function createIntegration(integration: Partial<Integration>): Promise<Integration | null> {
   try {
     const { data, error } = await supabase
       .from("integrations")
@@ -108,7 +108,7 @@ export async function createIntegration(integration) {
 }
 
 // Update an integration
-export async function updateIntegration(id, updates) {
+export async function updateIntegration(id: string, updates: Partial<Integration>): Promise<Integration | null> {
   try {
     const { data, error } = await supabase
       .from("integrations")
