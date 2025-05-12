@@ -1,4 +1,3 @@
-
 -- Create integrations table
 CREATE TABLE IF NOT EXISTS integrations (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -40,54 +39,6 @@ CREATE POLICY "Users can delete their own integrations"
 ON integrations
 FOR DELETE
 USING (user_id = auth.uid());
-
--- 5. Team members can view team integrations
-CREATE POLICY "Team members can view team integrations"
-ON integrations
-FOR SELECT
-USING (
-  team_id IS NOT NULL AND
-  EXISTS (
-    SELECT 1 FROM team_members
-    WHERE team_id = integrations.team_id AND user_id = auth.uid()
-  )
-);
-
--- 6. Team creators can create team integrations
-CREATE POLICY "Team creators can create team integrations"
-ON integrations
-FOR INSERT
-WITH CHECK (
-  team_id IS NOT NULL AND
-  EXISTS (
-    SELECT 1 FROM teams
-    WHERE id = team_id AND created_by = auth.uid()
-  )
-);
-
--- 7. Team creators can update team integrations
-CREATE POLICY "Team creators can update team integrations"
-ON integrations
-FOR UPDATE
-USING (
-  team_id IS NOT NULL AND
-  EXISTS (
-    SELECT 1 FROM teams
-    WHERE id = team_id AND created_by = auth.uid()
-  )
-);
-
--- 8. Team creators can delete team integrations
-CREATE POLICY "Team creators can delete team integrations"
-ON integrations
-FOR DELETE
-USING (
-  team_id IS NOT NULL AND
-  EXISTS (
-    SELECT 1 FROM teams
-    WHERE id = team_id AND created_by = auth.uid()
-  )
-);
 
 -- 9. Admins can view all integrations
 CREATE POLICY "Admins can view all integrations"
