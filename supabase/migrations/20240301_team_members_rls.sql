@@ -1,3 +1,14 @@
+-- Create team_members table
+CREATE TABLE IF NOT EXISTS team_members (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  team_id uuid NOT NULL,
+  user_id uuid NOT NULL,
+  role text,
+  joined_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT fk_team FOREIGN KEY (team_id) REFERENCES teams(id),
+  CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES profiles(id)
+);
+
 -- Enable Row Level Security for team_members table
 ALTER TABLE team_members ENABLE ROW LEVEL SECURITY;
 

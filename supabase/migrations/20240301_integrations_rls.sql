@@ -1,3 +1,36 @@
+-- Create teams table
+CREATE TABLE IF NOT EXISTS teams (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name text NOT NULL,
+  created_by uuid NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- Create team_members table
+CREATE TABLE IF NOT EXISTS team_members (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  team_id uuid NOT NULL,
+  user_id uuid NOT NULL,
+  role text,
+  joined_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT fk_team FOREIGN KEY (team_id) REFERENCES teams(id),
+  CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES profiles(id)
+);
+
+-- Create integrations table
+CREATE TABLE IF NOT EXISTS integrations (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid,
+  name text NOT NULL,
+  type text NOT NULL,
+  status text NOT NULL DEFAULT 'inactive',
+  config jsonb,
+  team_id uuid,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT fk_user FOREIGN KEY (user_id) REFERENCES profiles(id)
+);
+
 -- Enable Row Level Security for integrations table
 ALTER TABLE integrations ENABLE ROW LEVEL SECURITY;
 
