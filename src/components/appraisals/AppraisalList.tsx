@@ -29,10 +29,12 @@ import {
   FileText, 
   X, 
   AlertCircle, 
-  Clock 
+  Clock,
+  ArrowUpDown 
 } from 'lucide-react';
 
 type Appraisal = Database['public']['Tables']['appraisals']['Row'];
+type SortOption = 'created_desc' | 'created_asc' | 'address_asc' | 'address_desc' | 'value_desc' | 'value_asc';
 
 export function AppraisalList() {
   const [appraisals, setAppraisals] = useState<Appraisal[]>([]);
@@ -41,6 +43,7 @@ export function AppraisalList() {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<SortOption>('created_desc');
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -71,13 +74,11 @@ export function AppraisalList() {
     fetchAppraisals();
   }, [user]);
 
-  // Filter appraisals when search query or status filter changes
+  // Filter and sort appraisals when search query, status filter, or sort option changes
   useEffect(() => {
-    if (searchQuery.trim() === '' && statusFilter === 'all') {
-      setFilteredAppraisals(appraisals);
-      return;
-    }
+    if (!appraisals.length) return;
     
+    // First apply filters
     let filtered = [...appraisals];
     
     // Apply search filter
@@ -94,8 +95,34 @@ export function AppraisalList() {
       filtered = filtered.filter(appraisal => appraisal.status === statusFilter);
     }
     
-    setFilteredAppraisals(filtered);
-  }, [searchQuery, statusFilter, appraisals]);
+    // Apply sorting
+    const sorted = [...filtered].sort((a, b) => {
+      // Define variables for value comparisons outside of case blocks
+      const aValueHigh = a.valuation_high || 0;
+      const aValueLow = a.valuation_low || 0;
+      const bValueHigh = b.valuation_high || 0;
+      const bValueLow = b.valuation_low || 0;
+      
+      switch (sortBy) {
+        case 'created_desc':
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        case 'created_asc':
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        case 'address_asc':
+          return a.property_address.localeCompare(b.property_address);
+        case 'address_desc':
+          return b.property_address.localeCompare(a.property_address);
+        case 'value_desc':
+          return (bValueHigh || bValueLow) - (aValueHigh || aValueLow);
+        case 'value_asc':
+          return (aValueHigh || aValueLow) - (bValueHigh || bValueLow);
+        default:
+          return 0;
+      }
+    });
+    
+    setFilteredAppraisals(sorted);
+  }, [searchQuery, statusFilter, sortBy, appraisals]);
 
   // Handle search with API
   const handleSearch = async () => {
@@ -123,6 +150,7 @@ export function AppraisalList() {
   const clearFilters = () => {
     setSearchQuery('');
     setStatusFilter('all');
+    setSortBy('created_desc');
     setFilteredAppraisals(appraisals);
   };
 
@@ -191,12 +219,12 @@ export function AppraisalList() {
           </Button>
         </div>
         
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Select
             value={statusFilter}
             onValueChange={setStatusFilter}
           >
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-[160px]">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
@@ -208,7 +236,24 @@ export function AppraisalList() {
             </SelectContent>
           </Select>
           
-          {(searchQuery || statusFilter !== 'all') && (
+          <Select
+            value={sortBy}
+            onValueChange={(value) => setSortBy(value as SortOption)}
+          >
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="created_desc">Newest first</SelectItem>
+              <SelectItem value="created_asc">Oldest first</SelectItem>
+              <SelectItem value="address_asc">Address (A-Z)</SelectItem>
+              <SelectItem value="address_desc">Address (Z-A)</SelectItem>
+              <SelectItem value="value_desc">Value (High-Low)</SelectItem>
+              <SelectItem value="value_asc">Value (Low-High)</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          {(searchQuery || statusFilter !== 'all' || sortBy !== 'created_desc') && (
             <Button variant="ghost" onClick={clearFilters}>
               <X className="h-4 w-4 mr-1" />
               Clear

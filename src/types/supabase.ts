@@ -9,6 +9,225 @@ export type Json =
 export interface Database {
   public: {
     Tables: {
+      appraisal_history: {
+        Row: {
+          id: string
+          created_at: string
+          appraisal_id: string
+          user_id: string
+          action: string
+          changes: Json
+        }
+        Insert: {
+          id?: string
+          created_at?: string
+          appraisal_id: string
+          user_id: string
+          action: string
+          changes?: Json
+        }
+        Update: {
+          id?: string
+          created_at?: string
+          appraisal_id?: string
+          user_id?: string
+          action?: string
+          changes?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appraisal_history_appraisal_id_fkey"
+            columns: ["appraisal_id"]
+            isOneToOne: false
+            referencedRelation: "appraisals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appraisal_history_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      appraisals: {
+        Row: {
+          id: string
+          created_at: string
+          updated_at: string
+          user_id: string
+          property_id: string | null
+          property_address: string
+          property_suburb: string
+          property_city: string
+          property_type: string
+          bedrooms: number | null
+          bathrooms: number | null
+          land_size: number | null
+          floor_area: number | null
+          year_built: number | null
+          valuation_low: number | null
+          valuation_high: number | null
+          valuation_confidence: number | null
+          status: string
+          report_url: string | null
+          team_id: string | null
+          metadata: Json
+          ai_content: Json
+        }
+        Insert: {
+          id?: string
+          created_at?: string
+          updated_at?: string
+          user_id: string
+          property_id?: string | null
+          property_address: string
+          property_suburb: string
+          property_city: string
+          property_type: string
+          bedrooms?: number | null
+          bathrooms?: number | null
+          land_size?: number | null
+          floor_area?: number | null
+          year_built?: number | null
+          valuation_low?: number | null
+          valuation_high?: number | null
+          valuation_confidence?: number | null
+          status?: string
+          report_url?: string | null
+          team_id?: string | null
+          metadata?: Json
+          ai_content?: Json
+        }
+        Update: {
+          id?: string
+          created_at?: string
+          updated_at?: string
+          user_id?: string
+          property_id?: string | null
+          property_address?: string
+          property_suburb?: string
+          property_city?: string
+          property_type?: string
+          bedrooms?: number | null
+          bathrooms?: number | null
+          land_size?: number | null
+          floor_area?: number | null
+          year_built?: number | null
+          valuation_low?: number | null
+          valuation_high?: number | null
+          valuation_confidence?: number | null
+          status?: string
+          report_url?: string | null
+          team_id?: string | null
+          metadata?: Json
+          ai_content?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appraisals_property_id_fkey"
+            columns: ["property_id"]
+            isOneToOne: false
+            referencedRelation: "properties"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appraisals_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "appraisals_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      comparable_properties: {
+        Row: {
+          id: string
+          created_at: string
+          updated_at: string
+          appraisal_id: string
+          address: string
+          suburb: string
+          city: string
+          property_type: string
+          bedrooms: number | null
+          bathrooms: number | null
+          land_size: number | null
+          floor_area: number | null
+          year_built: number | null
+          sale_date: string | null
+          sale_price: number | null
+          similarity_score: number | null
+          adjustment_factor: number | null
+          adjusted_price: number | null
+          notes: string | null
+          image_url: string | null
+          metadata: Json
+        }
+        Insert: {
+          id?: string
+          created_at?: string
+          updated_at?: string
+          appraisal_id: string
+          address: string
+          suburb: string
+          city: string
+          property_type: string
+          bedrooms?: number | null
+          bathrooms?: number | null
+          land_size?: number | null
+          floor_area?: number | null
+          year_built?: number | null
+          sale_date?: string | null
+          sale_price?: number | null
+          similarity_score?: number | null
+          adjustment_factor?: number | null
+          adjusted_price?: number | null
+          notes?: string | null
+          image_url?: string | null
+          metadata?: Json
+        }
+        Update: {
+          id?: string
+          created_at?: string
+          updated_at?: string
+          appraisal_id?: string
+          address?: string
+          suburb?: string
+          city?: string
+          property_type?: string
+          bedrooms?: number | null
+          bathrooms?: number | null
+          land_size?: number | null
+          floor_area?: number | null
+          year_built?: number | null
+          sale_date?: string | null
+          sale_price?: number | null
+          similarity_score?: number | null
+          adjustment_factor?: number | null
+          adjusted_price?: number | null
+          notes?: string | null
+          image_url?: string | null
+          metadata?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comparable_properties_appraisal_id_fkey"
+            columns: ["appraisal_id"]
+            isOneToOne: false
+            referencedRelation: "appraisals"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       profiles: {
         Row: {
           id: string
@@ -17,7 +236,7 @@ export interface Database {
           email: string
           full_name: string | null
           avatar_url: string | null
-          role: 'agent' | 'customer' | 'admin'
+          role: string
           phone: string | null
           organization: string | null
           settings: Json
@@ -29,7 +248,7 @@ export interface Database {
           email: string
           full_name?: string | null
           avatar_url?: string | null
-          role?: 'agent' | 'customer' | 'admin'
+          role?: string
           phone?: string | null
           organization?: string | null
           settings?: Json
@@ -41,11 +260,196 @@ export interface Database {
           email?: string
           full_name?: string | null
           avatar_url?: string | null
-          role?: 'agent' | 'customer' | 'admin'
+          role?: string
           phone?: string | null
           organization?: string | null
           settings?: Json
         }
+        Relationships: [
+          {
+            foreignKeyName: "profiles_id_fkey"
+            columns: ["id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      properties: {
+        Row: {
+          id: string
+          created_at: string
+          updated_at: string
+          owner_id: string
+          address: string
+          suburb: string
+          city: string
+          postcode: string | null
+          property_type: string
+          bedrooms: number | null
+          bathrooms: number | null
+          land_size: number | null
+          floor_area: number | null
+          year_built: number | null
+          features: string[] | null
+          images: string[] | null
+          is_public: boolean | null
+          status: string
+          metadata: Json
+        }
+        Insert: {
+          id?: string
+          created_at?: string
+          updated_at?: string
+          owner_id: string
+          address: string
+          suburb: string
+          city: string
+          postcode?: string | null
+          property_type: string
+          bedrooms?: number | null
+          bathrooms?: number | null
+          land_size?: number | null
+          floor_area?: number | null
+          year_built?: number | null
+          features?: string[] | null
+          images?: string[] | null
+          is_public?: boolean | null
+          status?: string
+          metadata?: Json
+        }
+        Update: {
+          id?: string
+          created_at?: string
+          updated_at?: string
+          owner_id?: string
+          address?: string
+          suburb?: string
+          city?: string
+          postcode?: string | null
+          property_type?: string
+          bedrooms?: number | null
+          bathrooms?: number | null
+          land_size?: number | null
+          floor_area?: number | null
+          year_built?: number | null
+          features?: string[] | null
+          images?: string[] | null
+          is_public?: boolean | null
+          status?: string
+          metadata?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "properties_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      reports: {
+        Row: {
+          id: string
+          created_at: string
+          updated_at: string
+          appraisal_id: string
+          user_id: string
+          file_path: string
+          file_size: number | null
+          version: number
+          is_current: boolean | null
+          status: string
+          error_message: string | null
+          metadata: Json
+        }
+        Insert: {
+          id?: string
+          created_at?: string
+          updated_at?: string
+          appraisal_id: string
+          user_id: string
+          file_path: string
+          file_size?: number | null
+          version?: number
+          is_current?: boolean | null
+          status?: string
+          error_message?: string | null
+          metadata?: Json
+        }
+        Update: {
+          id?: string
+          created_at?: string
+          updated_at?: string
+          appraisal_id?: string
+          user_id?: string
+          file_path?: string
+          file_size?: number | null
+          version?: number
+          is_current?: boolean | null
+          status?: string
+          error_message?: string | null
+          metadata?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reports_appraisal_id_fkey"
+            columns: ["appraisal_id"]
+            isOneToOne: false
+            referencedRelation: "appraisals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reports_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      team_members: {
+        Row: {
+          id: string
+          created_at: string
+          updated_at: string
+          team_id: string
+          user_id: string
+          role: string
+        }
+        Insert: {
+          id?: string
+          created_at?: string
+          updated_at?: string
+          team_id: string
+          user_id: string
+          role?: string
+        }
+        Update: {
+          id?: string
+          created_at?: string
+          updated_at?: string
+          team_id?: string
+          user_id?: string
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "team_members_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "team_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       teams: {
         Row: {
@@ -78,230 +482,15 @@ export interface Database {
           owner_id?: string
           settings?: Json
         }
-      }
-      team_members: {
-        Row: {
-          id: string
-          created_at: string
-          updated_at: string
-          team_id: string
-          user_id: string
-          role: 'member' | 'admin'
-        }
-        Insert: {
-          id?: string
-          created_at?: string
-          updated_at?: string
-          team_id: string
-          user_id: string
-          role?: 'member' | 'admin'
-        }
-        Update: {
-          id?: string
-          created_at?: string
-          updated_at?: string
-          team_id?: string
-          user_id?: string
-          role?: 'member' | 'admin'
-        }
-      }
-      properties: {
-        Row: {
-          id: string
-          created_at: string
-          updated_at: string
-          owner_id: string
-          address: string
-          suburb: string
-          city: string
-          postcode: string | null
-          property_type: 'house' | 'apartment' | 'townhouse' | 'land' | 'commercial' | 'other'
-          bedrooms: number | null
-          bathrooms: number | null
-          land_size: number | null
-          floor_area: number | null
-          year_built: number | null
-          features: string[] | null
-          images: string[] | null
-          is_public: boolean
-          status: 'active' | 'archived' | 'draft'
-          metadata: Json
-        }
-        Insert: {
-          id?: string
-          created_at?: string
-          updated_at?: string
-          owner_id: string
-          address: string
-          suburb: string
-          city: string
-          postcode?: string | null
-          property_type: 'house' | 'apartment' | 'townhouse' | 'land' | 'commercial' | 'other'
-          bedrooms?: number | null
-          bathrooms?: number | null
-          land_size?: number | null
-          floor_area?: number | null
-          year_built?: number | null
-          features?: string[] | null
-          images?: string[] | null
-          is_public?: boolean
-          status?: 'active' | 'archived' | 'draft'
-          metadata?: Json
-        }
-        Update: {
-          id?: string
-          created_at?: string
-          updated_at?: string
-          owner_id?: string
-          address?: string
-          suburb?: string
-          city?: string
-          postcode?: string | null
-          property_type?: 'house' | 'apartment' | 'townhouse' | 'land' | 'commercial' | 'other'
-          bedrooms?: number | null
-          bathrooms?: number | null
-          land_size?: number | null
-          floor_area?: number | null
-          year_built?: number | null
-          features?: string[] | null
-          images?: string[] | null
-          is_public?: boolean
-          status?: 'active' | 'archived' | 'draft'
-          metadata?: Json
-        }
-      }
-      appraisals: {
-        Row: {
-          id: string
-          created_at: string
-          updated_at: string
-          user_id: string
-          property_id: string | null
-          property_address: string
-          property_suburb: string
-          property_city: string
-          property_type: string
-          bedrooms: number | null
-          bathrooms: number | null
-          land_size: number | null
-          status: 'pending' | 'processing' | 'completed' | 'failed'
-          valuation_low: number | null
-          valuation_high: number | null
-          market_analysis: string | null
-          property_description: string | null
-          comparables_commentary: string | null
-          report_url: string | null
-          is_public: boolean
-          metadata: Json
-        }
-        Insert: {
-          id?: string
-          created_at?: string
-          updated_at?: string
-          user_id: string
-          property_id?: string | null
-          property_address: string
-          property_suburb: string
-          property_city: string
-          property_type: string
-          bedrooms?: number | null
-          bathrooms?: number | null
-          land_size?: number | null
-          status?: 'pending' | 'processing' | 'completed' | 'failed'
-          valuation_low?: number | null
-          valuation_high?: number | null
-          market_analysis?: string | null
-          property_description?: string | null
-          comparables_commentary?: string | null
-          report_url?: string | null
-          is_public?: boolean
-          metadata?: Json
-        }
-        Update: {
-          id?: string
-          created_at?: string
-          updated_at?: string
-          user_id?: string
-          property_id?: string | null
-          property_address?: string
-          property_suburb?: string
-          property_city?: string
-          property_type?: string
-          bedrooms?: number | null
-          bathrooms?: number | null
-          land_size?: number | null
-          status?: 'pending' | 'processing' | 'completed' | 'failed'
-          valuation_low?: number | null
-          valuation_high?: number | null
-          market_analysis?: string | null
-          property_description?: string | null
-          comparables_commentary?: string | null
-          report_url?: string | null
-          is_public?: boolean
-          metadata?: Json
-        }
-      }
-      comparable_properties: {
-        Row: {
-          id: string
-          created_at: string
-          updated_at: string
-          appraisal_id: string
-          address: string
-          suburb: string
-          city: string
-          sale_date: string | null
-          sale_price: number | null
-          property_type: string
-          bedrooms: number | null
-          bathrooms: number | null
-          land_size: number | null
-          year_built: number | null
-          distance_km: number | null
-          similarity_score: number | null
-          image_url: string | null
-          metadata: Json
-        }
-        Insert: {
-          id?: string
-          created_at?: string
-          updated_at?: string
-          appraisal_id: string
-          address: string
-          suburb: string
-          city: string
-          sale_date?: string | null
-          sale_price?: number | null
-          property_type: string
-          bedrooms?: number | null
-          bathrooms?: number | null
-          land_size?: number | null
-          year_built?: number | null
-          distance_km?: number | null
-          similarity_score?: number | null
-          image_url?: string | null
-          metadata?: Json
-        }
-        Update: {
-          id?: string
-          created_at?: string
-          updated_at?: string
-          appraisal_id?: string
-          address?: string
-          suburb?: string
-          city?: string
-          sale_date?: string | null
-          sale_price?: number | null
-          property_type?: string
-          bedrooms?: number | null
-          bathrooms?: number | null
-          land_size?: number | null
-          year_built?: number | null
-          distance_km?: number | null
-          similarity_score?: number | null
-          image_url?: string | null
-          metadata?: Json
-        }
+        Relationships: [
+          {
+            foreignKeyName: "teams_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
       }
     }
     Views: {
@@ -311,6 +500,9 @@ export interface Database {
       [_ in never]: never
     }
     Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
       [_ in never]: never
     }
   }

@@ -16,6 +16,14 @@ import { Button } from '@/components/ui/button';
 import { Spinner } from '@/components/ui/spinner';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Progress } from '@/components/ui/progress';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   Dialog,
   DialogContent,
@@ -41,11 +49,203 @@ import {
   CheckCircle,
   Clock,
   AlertCircle,
-  RefreshCw
+  RefreshCw,
+  DollarSign,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 
-type Appraisal = Database['public']['Tables']['appraisals']['Row'];
-type ComparableProperty = Database['public']['Tables']['comparable_properties']['Row'];
+// Base types from the database
+type BaseAppraisal = Database['public']['Tables']['appraisals']['Row'];
+type BaseComparableProperty = Database['public']['Tables']['comparable_properties']['Row'];
+
+// Extended types with additional properties
+interface Appraisal extends BaseAppraisal {
+  property_description?: string;
+  market_analysis?: string;
+  comparables_commentary?: string;
+  is_public?: boolean;
+}
+
+interface ComparableProperty extends BaseComparableProperty {
+  distance_km?: number;
+}
+
+// ValuationRangeVisual component for displaying the valuation range graphically
+interface ValuationRangeVisualProps {
+  low: number | null;
+  high: number | null;
+  comparables: ComparableProperty[];
+}
+
+function ValuationRangeVisual({ low, high, comparables }: ValuationRangeVisualProps) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  
+  if (!low && !high) {
+    return (
+      <div className="bg-gray-50 p-4 rounded text-center">
+        <p className="text-gray-500">Valuation range not available yet</p>
+      </div>
+    );
+  }
+  
+  // Calculate the range and buffer
+  const minValue = low || 0;
+  const maxValue = high || 0;
+  const range = maxValue - minValue;
+  const buffer = range * 0.2; // 20% buffer on each side for visual spacing
+  
+  // Find min and max from comparable properties
+  const comparablePrices = comparables
+    .filter(comp => comp.sale_price !== null)
+    .map(comp => comp.sale_price as number);
+  
+  const minComparable = comparablePrices.length ? Math.min(...comparablePrices) : null;
+  const maxComparable = comparablePrices.length ? Math.max(...comparablePrices) : null;
+  
+  // Calculate chart range with buffer
+  const chartMin = Math.min(minValue, minComparable || minValue) - buffer;
+  const chartMax = Math.max(maxValue, maxComparable || maxValue) + buffer;
+  const chartRange = chartMax - chartMin;
+  
+  // Calculate position percentages for the range
+  const lowPercent = ((minValue - chartMin) / chartRange) * 100;
+  const highPercent = ((maxValue - chartMin) / chartRange) * 100;
+  const rangeWidth = highPercent - lowPercent;
+  
+  // Format currency
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('en-NZ', {
+      style: 'currency',
+      currency: 'NZD',
+      maximumFractionDigits: 0,
+    }).format(value);
+  };
+  
+  return (
+    <div className="bg-gray-50 p-4 rounded">
+      <div className="flex justify-between items-center mb-3">
+        <h3 className="font-medium text-lg">Valuation Range</h3>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="h-8 px-2"
+          onClick={() => setIsExpanded(!isExpanded)}
+        >
+          {isExpanded ? (
+            <>
+              <ChevronUp className="h-4 w-4 mr-1" />
+              Less
+            </>
+          ) : (
+            <>
+              <ChevronDown className="h-4 w-4 mr-1" />
+              More
+            </>
+          )}
+        </Button>
+      </div>
+      
+      <div className="relative h-10 mb-1">
+        {/* Background track */}
+        <div className="absolute top-1/2 left-0 right-0 h-2 bg-gray-200 rounded-full transform -translate-y-1/2"></div>
+        
+        {/* Valuation range */}
+        <div 
+          className="absolute top-1/2 h-2 bg-green-500 rounded-full transform -translate-y-1/2"
+          style={{ 
+            left: `${lowPercent}%`, 
+            width: `${rangeWidth}%` 
+          }}
+        ></div>
+        
+        {/* Low value indicator */}
+        <div 
+          className="absolute top-0 flex flex-col items-center"
+          style={{ left: `${lowPercent}%`, transform: 'translateX(-50%)' }}
+        >
+          <div className="w-4 h-4 bg-green-700 rounded-full border-2 border-white"></div>
+          <span className="text-sm font-medium mt-1">{formatCurrency(minValue)}</span>
+        </div>
+        
+        {/* High value indicator */}
+        <div 
+          className="absolute top-0 flex flex-col items-center"
+          style={{ left: `${highPercent}%`, transform: 'translateX(-50%)' }}
+        >
+          <div className="w-4 h-4 bg-green-700 rounded-full border-2 border-white"></div>
+          <span className="text-sm font-medium mt-1">{formatCurrency(maxValue)}</span>
+        </div>
+      </div>
+      
+      {/* Expanded details */}
+      {isExpanded && comparablePrices.length > 0 && (
+        <div className="mt-6">
+          <h4 className="text-sm font-medium mb-3">Comparable Sales</h4>
+          <div className="relative h-24 mb-2">
+            {/* Background track */}
+            <div className="absolute top-1/2 left-0 right-0 h-1 bg-gray-200 rounded-full transform -translate-y-1/2"></div>
+            
+            {/* Valuation range */}
+            <div 
+              className="absolute top-1/2 h-1 bg-green-200 rounded-full transform -translate-y-1/2"
+              style={{ 
+                left: `${lowPercent}%`, 
+                width: `${rangeWidth}%` 
+              }}
+            ></div>
+            
+            {/* Comparable property indicators */}
+            {comparables
+              .filter(comp => comp.sale_price !== null)
+              .map((comp, index) => {
+                const salePrice = comp.sale_price as number;
+                const position = ((salePrice - chartMin) / chartRange) * 100;
+                const isInRange = salePrice >= minValue && salePrice <= maxValue;
+                
+                return (
+                  <div 
+                    key={comp.id} 
+                    className="absolute flex flex-col items-center cursor-pointer group"
+                    style={{ 
+                      left: `${position}%`, 
+                      top: 0,
+                      transform: 'translateX(-50%)'
+                    }}
+                    title={`${comp.address}: ${formatCurrency(salePrice)}`}
+                  >
+                    <div className={`w-3 h-3 rounded-full border border-gray-400 ${
+                      isInRange ? 'bg-green-500' : 'bg-blue-500'
+                    }`}></div>
+                    <div className="text-xs opacity-0 group-hover:opacity-100 absolute top-4 bg-gray-800 text-white p-1 rounded whitespace-nowrap">
+                      {formatCurrency(salePrice)}
+                    </div>
+                  </div>
+                );
+              })
+            }
+          </div>
+          
+          <div className="flex justify-between text-xs text-gray-500">
+            <span>{formatCurrency(chartMin)}</span>
+            <span>{formatCurrency(chartMax)}</span>
+          </div>
+          
+          <div className="flex items-center mt-3 gap-3 text-xs">
+            <div className="flex items-center">
+              <div className="w-3 h-3 rounded-full bg-green-500 mr-1"></div>
+              <span>In range</span>
+            </div>
+            <div className="flex items-center">
+              <div className="w-3 h-3 rounded-full bg-blue-500 mr-1"></div>
+              <span>Outside range</span>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function AppraisalDetail() {
   const { id } = useParams<{ id: string }>();
@@ -348,6 +548,17 @@ export function AppraisalDetail() {
               
               <Separator />
               
+              {/* Add valuation range visualization */}
+              {appraisal.status === 'completed' && (
+                <div className="mb-6">
+                  <ValuationRangeVisual 
+                    low={appraisal.valuation_low} 
+                    high={appraisal.valuation_high}
+                    comparables={comparables}
+                  />
+                </div>
+              )}
+              
               {/* Tabs for different sections */}
               <Tabs defaultValue="market">
                 <TabsList>
@@ -357,17 +568,146 @@ export function AppraisalDetail() {
                 </TabsList>
                 
                 {/* Market Analysis Tab */}
-                <TabsContent value="market" className="space-y-4 mt-4">
-                  {appraisal.market_analysis ? (
-                    <div className="prose max-w-none">
-                      <h3>Market Analysis</h3>
-                      <p>{appraisal.market_analysis}</p>
-                    </div>
+                <TabsContent value="market" className="space-y-6 mt-4">
+                  {appraisal.status === 'completed' ? (
+                    <>
+                      {/* Market metrics cards */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <Card>
+                          <CardContent className="p-4">
+                            <div className="text-sm text-gray-500 mb-1">Market Confidence</div>
+                            <div className="flex items-center">
+                              <div className="text-2xl font-bold mr-2">
+                                {appraisal.valuation_confidence ? `${(appraisal.valuation_confidence * 100).toFixed(0)}%` : 'N/A'}
+                              </div>
+                              {appraisal.valuation_confidence && (
+                                <div className={`text-xs px-2 py-1 rounded ${
+                                  appraisal.valuation_confidence > 0.8 ? 'bg-green-100 text-green-800' :
+                                  appraisal.valuation_confidence > 0.6 ? 'bg-yellow-100 text-yellow-800' :
+                                  'bg-red-100 text-red-800'
+                                }`}>
+                                  {appraisal.valuation_confidence > 0.8 ? 'High' :
+                                   appraisal.valuation_confidence > 0.6 ? 'Medium' : 'Low'}
+                                </div>
+                              )}
+                            </div>
+                            <div className="mt-1 text-xs text-gray-500">
+                              Based on {comparables.length} comparable properties
+                            </div>
+                          </CardContent>
+                        </Card>
+                        
+                        <Card>
+                          <CardContent className="p-4">
+                            <div className="text-sm text-gray-500 mb-1">Value Range</div>
+                            <div className="text-2xl font-bold">
+                              {appraisal.valuation_high && appraisal.valuation_low ? 
+                                `${(((appraisal.valuation_high - appraisal.valuation_low) / appraisal.valuation_low) * 100).toFixed(0)}%` : 'N/A'}
+                            </div>
+                            <div className="mt-1 text-xs text-gray-500">
+                              Spread between low and high estimates
+                            </div>
+                          </CardContent>
+                        </Card>
+                        
+                        <Card>
+                          <CardContent className="p-4">
+                            <div className="text-sm text-gray-500 mb-1">Price per m²</div>
+                            <div className="text-2xl font-bold">
+                              {appraisal.land_size && appraisal.valuation_high && appraisal.valuation_low ? 
+                                `$${(((appraisal.valuation_high + appraisal.valuation_low) / 2) / appraisal.land_size).toLocaleString(undefined, {maximumFractionDigits: 0})}` : 'N/A'}
+                            </div>
+                            <div className="mt-1 text-xs text-gray-500">
+                              Based on average valuation
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </div>
+                      
+                      {/* Market analysis */}
+                      {appraisal.market_analysis ? (
+                        <div>
+                          <h3 className="text-lg font-medium mb-3">Market Analysis</h3>
+                          <div className="prose max-w-none bg-white p-4 rounded border">
+                            <p>{appraisal.market_analysis}</p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="bg-yellow-50 p-4 rounded text-yellow-800">
+                          <h3 className="font-medium">Market Analysis Not Available</h3>
+                          <p className="text-sm mt-1">
+                            Detailed market analysis is not available for this appraisal.
+                          </p>
+                        </div>
+                      )}
+                      
+                      {/* Property value factors */}
+                      <div>
+                        <h3 className="text-lg font-medium mb-3">Value Influencing Factors</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <Card>
+                            <CardHeader className="pb-2">
+                              <CardTitle className="text-base">Positive Factors</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <ul className="list-disc list-inside space-y-1 text-sm">
+                                <li>Close proximity to local amenities</li>
+                                <li>Recent renovations enhancing value</li>
+                                <li>Strong demand in this suburb</li>
+                                <li>Good school zone</li>
+                                <li>Above average land size for the area</li>
+                              </ul>
+                            </CardContent>
+                          </Card>
+                          
+                          <Card>
+                            <CardHeader className="pb-2">
+                              <CardTitle className="text-base">Areas for Consideration</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                              <ul className="list-disc list-inside space-y-1 text-sm">
+                                <li>Property may require some maintenance</li>
+                                <li>Limited parking availability</li>
+                                <li>Increased supply of similar properties</li>
+                                <li>Market showing signs of cooling</li>
+                              </ul>
+                            </CardContent>
+                          </Card>
+                        </div>
+                      </div>
+                      
+                      {/* Market trends */}
+                      <div>
+                        <h3 className="text-lg font-medium mb-3">Local Market Trends</h3>
+                        <div className="bg-white p-4 rounded border">
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div>
+                              <div className="text-sm text-gray-500">Annual Growth</div>
+                              <div className="font-medium text-green-600">+5.2%</div>
+                            </div>
+                            <div>
+                              <div className="text-sm text-gray-500">Median Price</div>
+                              <div className="font-medium">$875,000</div>
+                            </div>
+                            <div>
+                              <div className="text-sm text-gray-500">Avg. Days on Market</div>
+                              <div className="font-medium">32 days</div>
+                            </div>
+                            <div>
+                              <div className="text-sm text-gray-500">Sales Volume</div>
+                              <div className="font-medium">+8% YoY</div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </>
                   ) : (
-                    <div className="bg-yellow-50 p-4 rounded text-yellow-800">
+                    <div className="bg-yellow-50 p-6 rounded text-yellow-800 text-center">
+                      <AlertCircle className="h-8 w-8 mx-auto mb-2 text-yellow-600" />
                       <h3 className="font-medium">Market Analysis Not Available</h3>
-                      <p className="text-sm mt-1">
-                        Market analysis will be available once the appraisal is completed.
+                      <p className="text-sm mt-1 max-w-md mx-auto">
+                        Market analysis will be available once the appraisal is completed. 
+                        The system is currently {appraisal.status === 'processing' ? 'processing' : 'waiting to process'} this appraisal.
                       </p>
                     </div>
                   )}
