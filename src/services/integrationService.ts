@@ -54,7 +54,7 @@ export async function fetchUserIntegrations() {
     const { data: teamMemberships, error: teamError } = await supabase
       .from('team_members')
       .select('team_id')
-      .eq('profile_id', user.id);
+      .eq('user_id', user.id);
     
     if (teamError) throw teamError;
     const teamIds = (teamMemberships as TeamMember[] || []).map((tm) => tm.team_id);
@@ -149,4 +149,4 @@ export async function deleteIntegration(id: string): Promise<boolean> {
     });
     return false;
   }
-} 
+}

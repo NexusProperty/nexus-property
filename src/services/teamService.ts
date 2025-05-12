@@ -60,9 +60,10 @@ export const fetchTeamMembers = async (teamId: string): Promise<TeamMember[]> =>
     .from("team_members")
     .select(`
       *,
-      profiles:profile_id (
+      profiles:user_id (
         id,
-        full_name,
+        first_name,
+        last_name,
         email,
         avatar_url
       )
@@ -170,12 +171,12 @@ export const addTeamMember = async (teamId: string, userId: string, role: string
 /**
  * Updates a team member's role
  */
-export const updateTeamMemberRole = async (teamId: string, profileId: string, role: string): Promise<TeamMember> => {
+export const updateTeamMemberRole = async (teamId: string, userId: string, role: string): Promise<TeamMember> => {
   const { data, error } = await supabase
     .from("team_members")
     .update({ role })
     .eq("team_id", teamId)
-    .eq("profile_id", profileId)
+    .eq("user_id", userId)
     .select()
     .single();
 
@@ -190,12 +191,12 @@ export const updateTeamMemberRole = async (teamId: string, profileId: string, ro
 /**
  * Removes a member from a team
  */
-export const removeTeamMember = async (teamId: string, profileId: string): Promise<void> => {
+export const removeTeamMember = async (teamId: string, userId: string): Promise<void> => {
   const { error } = await supabase
     .from("team_members")
     .delete()
     .eq("team_id", teamId)
-    .eq("profile_id", profileId);
+    .eq("user_id", userId);
 
   if (error) {
     console.error(`Error removing member from team ${teamId}:`, error);
