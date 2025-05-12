@@ -1,3 +1,4 @@
+
 -- Create integrations table
 CREATE TABLE IF NOT EXISTS integrations (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
