@@ -1,7 +1,9 @@
+
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Toaster } from "@/components/ui/toaster";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HelmetProvider } from "react-helmet-async";
+import { AuthProvider } from "@/context/AuthContext";
 
 // Layouts
 import { PublicLayout } from "@/layouts/PublicLayout";
@@ -39,46 +41,48 @@ const queryClient = new QueryClient();
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <HelmetProvider>
-        <Router>
-          <Routes>
-            {/* Public Routes */}
-            <Route element={<PublicLayout />}>
-              <Route path="/" element={<LandingPage />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/register" element={<RegisterPage />} />
-              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-              <Route path="/demo/property-data" element={<PropertyDataDemoPage />} />
-            </Route>
+      <AuthProvider>
+        <HelmetProvider>
+          <Router>
+            <Routes>
+              {/* Public Routes */}
+              <Route element={<PublicLayout />}>
+                <Route path="/" element={<LandingPage />} />
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/register" element={<RegisterPage />} />
+                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                <Route path="/demo/property-data" element={<PropertyDataDemoPage />} />
+              </Route>
 
-            {/* Agent Routes */}
-            <Route path="/agent" element={<AgentLayout />}>
-              <Route index element={<DashboardPage />} />
-              <Route path="teams" element={<TeamListPage />} />
-              <Route path="teams/:teamId" element={<TeamDetailPage />} />
-              <Route path="teams/create" element={<CreateTeamPage />} />
-              <Route path="profile" element={<ProfilePage />} />
-              <Route path="appraisals" element={<AppraisalFeedPage />} />
-              <Route path="appraisals/:id" element={<AppraisalDetailPage />} />
-            </Route>
+              {/* Agent Routes */}
+              <Route path="/agent" element={<AgentLayout />}>
+                <Route index element={<DashboardPage />} />
+                <Route path="teams" element={<TeamListPage />} />
+                <Route path="teams/:teamId" element={<TeamDetailPage />} />
+                <Route path="teams/create" element={<CreateTeamPage />} />
+                <Route path="profile" element={<ProfilePage />} />
+                <Route path="appraisals" element={<AppraisalFeedPage />} />
+                <Route path="appraisals/:id" element={<AppraisalDetailPage />} />
+              </Route>
 
-            {/* Customer Routes */}
-            <Route path="/customer" element={<CustomerLayout />}>
-              <Route index element={<CustomerDashboardPage />} />
-              <Route path="appraisals" element={<CustomerAppraisalsPage />} />
-              <Route path="appraisals/request" element={<RequestAppraisalPage />} />
-              <Route path="profile" element={<ProfilePage />} />
-            </Route>
+              {/* Customer Routes */}
+              <Route path="/customer" element={<CustomerLayout />}>
+                <Route index element={<CustomerDashboardPage />} />
+                <Route path="appraisals" element={<CustomerAppraisalsPage />} />
+                <Route path="appraisals/request" element={<RequestAppraisalPage />} />
+                <Route path="profile" element={<ProfilePage />} />
+              </Route>
 
-            {/* Admin Routes */}
-            <Route path="/admin" element={<AdminLayout />}>
-              <Route index element={<AdminDashboardPage />} />
-              <Route path="profile" element={<ProfilePage />} />
-            </Route>
-          </Routes>
-          <Toaster />
-        </Router>
-      </HelmetProvider>
+              {/* Admin Routes */}
+              <Route path="/admin" element={<AdminLayout />}>
+                <Route index element={<AdminDashboardPage />} />
+                <Route path="profile" element={<ProfilePage />} />
+              </Route>
+            </Routes>
+            <Toaster />
+          </Router>
+        </HelmetProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
