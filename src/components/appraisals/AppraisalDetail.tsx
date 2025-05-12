@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getAppraisalWithComparables, deleteAppraisal, getAppraisalReport } from '@/services/appraisal';
+import { updateAppraisalWithPropertyData } from '@/services/property-data';
 import { useAuth } from '@/contexts/AuthContext';
 import { Database } from '@/types/supabase';
 
@@ -256,43 +257,90 @@ export function AppraisalDetail() {
   const [appraisal, setAppraisal] = useState<Appraisal | null>(null);
   const [comparables, setComparables] = useState<ComparableProperty[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('overview');
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-
+  
   // Fetch appraisal data
-  useEffect(() => {
+  const fetchAppraisal = async () => {
     if (!id) return;
-
-    const fetchAppraisal = async () => {
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        const result = await getAppraisalWithComparables(id);
-        if (result.success && result.data) {
-          setAppraisal(result.data.appraisal);
-          setComparables(result.data.comparables);
-        } else {
-          setError(result.error || 'Failed to load appraisal');
-        }
-      } catch (err) {
-        setError('An unexpected error occurred');
-        console.error(err);
-      } finally {
-        setIsLoading(false);
+    
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const result = await getAppraisalWithComparables(id);
+      
+      if (result.success && result.data) {
+        setAppraisal(result.data.appraisal);
+        setComparables(result.data.comparables);
+      } else {
+        setError(result.error || 'Failed to load appraisal');
       }
-    };
-
+    } catch (err) {
+      console.error('Error loading appraisal:', err);
+      setError('An unexpected error occurred');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  // Load appraisal on mount
+  useEffect(() => {
     fetchAppraisal();
   }, [id]);
+
+  // Handle fetching property data
+  const handleFetchPropertyData = async () => {
+    if (!appraisal || !id) return;
+    
+    setIsProcessing(true);
+    
+    try {
+      const propertyData = {
+        address: appraisal.property_address,
+        suburb: appraisal.property_suburb,
+        city: appraisal.property_city,
+        propertyType: appraisal.property_type,
+      };
+      
+      const result = await updateAppraisalWithPropertyData(id, propertyData);
+      
+      if (result.success) {
+        toast({
+          title: 'Property Data Fetched',
+          description: 'Property data has been fetched and the appraisal is being processed.',
+        });
+        
+        // Refresh the appraisal data
+        fetchAppraisal();
+      } else {
+        toast({
+          title: 'Error',
+          description: result.error || 'Failed to fetch property data',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching property data:', error);
+      
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'An unexpected error occurred',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   // Handle appraisal deletion
   const handleDeleteAppraisal = async () => {
     if (!id) return;
     
-    setIsDeleting(true);
+    setIsProcessing(true);
     
     try {
       const result = await deleteAppraisal(id);
@@ -314,8 +362,8 @@ export function AppraisalDetail() {
         variant: 'destructive',
       });
     } finally {
-      setIsDeleting(false);
-      setDeleteDialogOpen(false);
+      setIsProcessing(false);
+      setIsDeleteDialogOpen(false);
     }
   };
 
@@ -466,7 +514,7 @@ export function AppraisalDetail() {
             Edit
           </Button>
           
-          <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
             <DialogTrigger asChild>
               <Button variant="destructive">
                 <Trash className="h-4 w-4 mr-2" />
@@ -483,17 +531,17 @@ export function AppraisalDetail() {
               <DialogFooter>
                 <Button
                   variant="outline"
-                  onClick={() => setDeleteDialogOpen(false)}
-                  disabled={isDeleting}
+                  onClick={() => setIsDeleteDialogOpen(false)}
+                  disabled={isProcessing}
                 >
                   Cancel
                 </Button>
                 <Button
                   variant="destructive"
                   onClick={handleDeleteAppraisal}
-                  disabled={isDeleting}
+                  disabled={isProcessing}
                 >
-                  {isDeleting ? (
+                  {isProcessing ? (
                     <>
                       <Spinner className="mr-2 h-4 w-4" />
                       Deleting...
@@ -951,6 +999,56 @@ export function AppraisalDetail() {
           </Card>
         </div>
       </div>
+      
+      <CardFooter className="flex justify-between border-t pt-5">
+        <Button
+          variant="outline"
+          onClick={() => navigate('/dashboard/appraisals')}
+        >
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Appraisals
+        </Button>
+        
+        <div className="flex gap-2">
+          {appraisal?.status === 'pending' && (
+            <Button 
+              onClick={handleFetchPropertyData}
+              disabled={isProcessing}
+            >
+              {isProcessing ? (
+                <>
+                  <Spinner className="h-4 w-4 mr-2" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Fetch Property Data
+                </>
+              )}
+            </Button>
+          )}
+          
+          {appraisal?.status === 'completed' && (
+            <Button 
+              onClick={handleDownloadReport}
+              disabled={!appraisal.report_url}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Download Report
+            </Button>
+          )}
+          
+          <Button 
+            variant="ghost"
+            className="text-red-500 hover:text-red-700 hover:bg-red-50"
+            onClick={() => setIsDeleteDialogOpen(true)}
+          >
+            <Trash className="h-4 w-4 mr-2" />
+            Delete
+          </Button>
+        </div>
+      </CardFooter>
     </div>
   );
 } 

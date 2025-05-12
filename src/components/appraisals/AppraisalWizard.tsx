@@ -21,10 +21,10 @@ import { Spinner } from '@/components/ui/spinner';
 import { Steps, Step } from '@/components/ui/steps';
 
 // Import individual step components
-import { PropertyDetailsStep } from './wizard-steps/PropertyDetailsStep';
-import { PropertyFeaturesStep } from './wizard-steps/PropertyFeaturesStep';
-import { AppraisalParametersStep } from './wizard-steps/AppraisalParametersStep';
-import { ConfirmationStep } from './wizard-steps/ConfirmationStep';
+import { PropertyDetailsStep } from '@/components/appraisals/wizard-steps/PropertyDetailsStep';
+import { PropertyFeaturesStep } from '@/components/appraisals/wizard-steps/PropertyFeaturesStep';
+import { AppraisalParametersStep } from '@/components/appraisals/wizard-steps/AppraisalParametersStep';
+import { ConfirmationStep } from '@/components/appraisals/wizard-steps/ConfirmationStep';
 
 type AppraisalInsert = Database['public']['Tables']['appraisals']['Insert'];
 
