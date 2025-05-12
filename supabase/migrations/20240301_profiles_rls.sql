@@ -1,12 +1,3 @@
--- Create profiles table
-CREATE TABLE IF NOT EXISTS profiles (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  role text NOT NULL,
-  name text,
-  email text,
-  created_at timestamptz NOT NULL DEFAULT now()
-);
-
 -- Enable Row Level Security for profiles table
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 

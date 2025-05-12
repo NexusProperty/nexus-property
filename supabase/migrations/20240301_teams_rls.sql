@@ -1,11 +1,3 @@
--- Create teams table
-CREATE TABLE IF NOT EXISTS teams (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  name text NOT NULL,
-  created_by uuid NOT NULL,
-  created_at timestamptz NOT NULL DEFAULT now()
-);
-
 -- Enable Row Level Security for teams table
 ALTER TABLE teams ENABLE ROW LEVEL SECURITY;
 

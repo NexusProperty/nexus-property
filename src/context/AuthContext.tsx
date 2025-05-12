@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
@@ -105,8 +104,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         password,
         options: {
           data: {
-            first_name: userData.full_name ? userData.full_name.split(' ')[0] : '',
-            last_name: userData.full_name ? userData.full_name.split(' ').slice(1).join(' ') : '',
+            first_name: userData.full_name?.split(' ')[0],
+            last_name: userData.full_name?.split(' ').slice(1).join(' '),
             role: userData.role || 'customer',
           },
         },
