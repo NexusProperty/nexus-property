@@ -23,6 +23,12 @@ import NotFound from "./pages/NotFound";
 // Dashboard pages
 import Dashboard from "./pages/dashboard/Dashboard";
 
+// Property pages
+import PropertiesIndexPage from "./pages/dashboard/properties";
+import NewPropertyPage from "./pages/dashboard/properties/new";
+import PropertyDetailPage from "./pages/dashboard/properties/PropertyDetail";
+import EditPropertyPage from "./pages/dashboard/properties/[id]/edit";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -47,9 +53,14 @@ const App = () => (
               <Route element={<DashboardLayout />}>
                 <Route path="/dashboard" element={<Dashboard />} />
                 
+                {/* Property routes */}
+                <Route path="/dashboard/properties" element={<PropertiesIndexPage />} />
+                <Route path="/dashboard/properties/new" element={<NewPropertyPage />} />
+                <Route path="/dashboard/properties/:id" element={<PropertyDetailPage />} />
+                <Route path="/dashboard/properties/:id/edit" element={<EditPropertyPage />} />
+                
                 {/* Agent-specific routes */}
                 <Route path="/dashboard/appraisals" element={<div>Appraisals</div>} />
-                <Route path="/dashboard/properties" element={<div>Properties</div>} />
                 <Route path="/dashboard/clients" element={<div>Clients</div>} />
                 <Route path="/dashboard/reports" element={<div>Reports</div>} />
                 
