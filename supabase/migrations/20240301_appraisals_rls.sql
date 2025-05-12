@@ -1,3 +1,26 @@
+-- Create profiles table
+CREATE TABLE IF NOT EXISTS profiles (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  role text NOT NULL,
+  name text,
+  email text,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+
+-- Create appraisals table
+CREATE TABLE IF NOT EXISTS appraisals (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  customer_id uuid NOT NULL,
+  agent_id uuid,
+  property_address text NOT NULL,
+  property_details jsonb,
+  status text NOT NULL DEFAULT 'draft',
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now(),
+  CONSTRAINT fk_customer FOREIGN KEY (customer_id) REFERENCES profiles(id),
+  CONSTRAINT fk_agent FOREIGN KEY (agent_id) REFERENCES profiles(id)
+);
+
 -- Enable Row Level Security for appraisals table
 ALTER TABLE appraisals ENABLE ROW LEVEL SECURITY;
 
@@ -20,13 +43,7 @@ CREATE POLICY "Customers can update their own appraisals"
 ON appraisals
 FOR UPDATE
 USING (customer_id = auth.uid())
-WITH CHECK (
-  customer_id = auth.uid() AND
-  -- Only allow updating these fields
-  (OLD.property_address = NEW.property_address OR
-   OLD.property_details = NEW.property_details OR
-   OLD.status = NEW.status)
-);
+WITH CHECK (customer_id = auth.uid());
 
 -- 4. Agents can view appraisals they've claimed
 CREATE POLICY "Agents can view appraisals they've claimed"

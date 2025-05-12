@@ -1,3 +1,14 @@
+-- Create integrations table
+CREATE TABLE IF NOT EXISTS integrations (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name text NOT NULL,
+  type text NOT NULL,
+  status text NOT NULL DEFAULT 'inactive',
+  config jsonb,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
 -- Enable Row Level Security for integrations table
 ALTER TABLE integrations ENABLE ROW LEVEL SECURITY;
 
