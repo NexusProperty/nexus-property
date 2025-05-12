@@ -1,24 +1,9 @@
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { InfoIcon } from "lucide-react";
+import { AppraisalFormValues } from "@/types/appraisal-schema";
 
 interface ConfirmationStepProps {
-  formValues: {
-    property_address: string;
-    property_suburb: string;
-    property_city: string;
-    property_type: string;
-    bedrooms: number | null;
-    bathrooms: number | null;
-    land_size: number | null;
-    floor_area: number | null;
-    year_built: number | null;
-    features: string[] | null;
-    comparable_radius: number;
-    include_recent_sales: boolean;
-    recent_sales_months: number;
-    market_analysis_depth: "basic" | "standard" | "detailed";
-    is_public: boolean;
-  };
+  formValues: AppraisalFormValues;
 }
 
 export function ConfirmationStep({ formValues }: ConfirmationStepProps) {

@@ -1,5 +1,8 @@
 import { UseFormReturn } from "react-hook-form";
-import { z } from "zod";
+import { 
+  AppraisalFormValues, 
+  AnalysisDepth
+} from "@/types/appraisal-schema";
 
 import {
   FormControl,
@@ -13,33 +16,15 @@ import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 
-const appraisalFormSchema = z.object({
-  comparable_radius: z.number().min(1).max(20).default(5),
-  include_recent_sales: z.boolean().default(true),
-  recent_sales_months: z.number().min(1).max(36).default(12),
-  market_analysis_depth: z.enum(["basic", "standard", "detailed"]).default("standard"),
-  is_public: z.boolean().default(false),
-});
-
-type AppraisalFormValues = z.infer<typeof appraisalFormSchema>;
-
 interface AppraisalParametersStepProps {
-  form: UseFormReturn<any>;
+  form: UseFormReturn<AppraisalFormValues>;
 }
 
 export function AppraisalParametersStep({ form }: AppraisalParametersStepProps) {
@@ -165,7 +150,7 @@ export function AppraisalParametersStep({ form }: AppraisalParametersStepProps) 
             <FormControl>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Card className={`cursor-pointer hover:border-primary transition-colors ${field.value === "basic" ? "border-primary bg-primary/5" : ""}`}
-                  onClick={() => field.onChange("basic")}>
+                  onClick={() => field.onChange("basic" as AnalysisDepth)}>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-lg">Basic</CardTitle>
                   </CardHeader>
@@ -181,7 +166,7 @@ export function AppraisalParametersStep({ form }: AppraisalParametersStepProps) 
                 </Card>
 
                 <Card className={`cursor-pointer hover:border-primary transition-colors ${field.value === "standard" ? "border-primary bg-primary/5" : ""}`}
-                  onClick={() => field.onChange("standard")}>
+                  onClick={() => field.onChange("standard" as AnalysisDepth)}>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-lg">Standard</CardTitle>
                   </CardHeader>
@@ -198,7 +183,7 @@ export function AppraisalParametersStep({ form }: AppraisalParametersStepProps) 
                 </Card>
 
                 <Card className={`cursor-pointer hover:border-primary transition-colors ${field.value === "detailed" ? "border-primary bg-primary/5" : ""}`}
-                  onClick={() => field.onChange("detailed")}>
+                  onClick={() => field.onChange("detailed" as AnalysisDepth)}>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-lg">Detailed</CardTitle>
                   </CardHeader>

@@ -3,11 +3,14 @@ import { useEffect, useState } from "react";
 import { getProperty } from "@/services/property";
 import { useToast } from "@/components/ui/use-toast";
 import { Database } from "@/types/supabase";
+import { 
+  AppraisalFormValues, 
+  PropertyType, 
+  validPropertyTypes 
+} from "@/types/appraisal-schema";
 
 import {
-  Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -28,7 +31,7 @@ import { Spinner } from "@/components/ui/spinner";
 type Property = Database["public"]["Tables"]["properties"]["Row"];
 
 interface PropertyDetailsStepProps {
-  form: UseFormReturn<any>;
+  form: UseFormReturn<AppraisalFormValues>;
 }
 
 export function PropertyDetailsStep({ form }: PropertyDetailsStepProps) {
@@ -37,6 +40,14 @@ export function PropertyDetailsStep({ form }: PropertyDetailsStepProps) {
   const [loadedProperty, setLoadedProperty] = useState<Property | null>(null);
   
   const propertyId = form.getValues("property_id");
+
+  // Helper function to ensure property type is valid
+  const ensureValidPropertyType = (type: string): PropertyType => {
+    if (validPropertyTypes.includes(type as PropertyType)) {
+      return type as PropertyType;
+    }
+    return 'house'; // Default fallback
+  };
 
   // Load property data if propertyId is provided
   useEffect(() => {
@@ -54,7 +65,10 @@ export function PropertyDetailsStep({ form }: PropertyDetailsStepProps) {
           form.setValue("property_suburb", result.data.suburb);
           form.setValue("property_city", result.data.city);
           form.setValue("property_postcode", result.data.postcode || "");
-          form.setValue("property_type", result.data.property_type);
+          
+          // Ensure property type is valid
+          const validType = ensureValidPropertyType(result.data.property_type);
+          form.setValue("property_type", validType);
         } else {
           toast({
             title: "Error",

@@ -3,9 +3,9 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { createAppraisal } from '@/services/appraisal';
 import { Database } from '@/types/supabase';
-import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { appraisalFormSchema, defaultAppraisalFormValues, AppraisalFormValues } from '@/types/appraisal-schema';
 
 import {
   Card,
@@ -28,34 +28,6 @@ import { ConfirmationStep } from './wizard-steps/ConfirmationStep';
 
 type AppraisalInsert = Database['public']['Tables']['appraisals']['Insert'];
 
-// Define the overall form schema
-const appraisalFormSchema = z.object({
-  // Step 1: Property Details
-  property_id: z.string().optional().nullable(),
-  property_address: z.string().min(3, 'Address must be at least 3 characters'),
-  property_suburb: z.string().min(2, 'Suburb must be at least 2 characters'),
-  property_city: z.string().min(2, 'City must be at least 2 characters'),
-  property_postcode: z.string().optional().nullable(),
-  property_type: z.enum(['house', 'apartment', 'townhouse', 'land', 'commercial', 'other']),
-  
-  // Step 2: Property Features
-  bedrooms: z.number().min(0).optional().nullable(),
-  bathrooms: z.number().min(0).optional().nullable(),
-  land_size: z.number().min(0).optional().nullable(),
-  floor_area: z.number().min(0).optional().nullable(),
-  year_built: z.number().min(1800).max(new Date().getFullYear()).optional().nullable(),
-  features: z.array(z.string()).optional().nullable(),
-  
-  // Step 3: Appraisal Parameters
-  comparable_radius: z.number().min(1).max(20).default(5),
-  include_recent_sales: z.boolean().default(true),
-  recent_sales_months: z.number().min(1).max(36).default(12),
-  market_analysis_depth: z.enum(['basic', 'standard', 'detailed']).default('standard'),
-  is_public: z.boolean().default(false),
-});
-
-type AppraisalFormValues = z.infer<typeof appraisalFormSchema>;
-
 export function AppraisalWizard() {
   const [searchParams] = useSearchParams();
   const propertyId = searchParams.get('propertyId');
@@ -71,23 +43,8 @@ export function AppraisalWizard() {
   const form = useForm<AppraisalFormValues>({
     resolver: zodResolver(appraisalFormSchema),
     defaultValues: {
-      property_id: propertyId || null,
-      property_address: '',
-      property_suburb: '',
-      property_city: '',
-      property_postcode: '',
-      property_type: 'house',
-      bedrooms: null,
-      bathrooms: null,
-      land_size: null,
-      floor_area: null,
-      year_built: null,
-      features: [],
-      comparable_radius: 5,
-      include_recent_sales: true,
-      recent_sales_months: 12,
-      market_analysis_depth: 'standard',
-      is_public: false,
+      ...defaultAppraisalFormValues,
+      property_id: propertyId || null
     },
   });
 
@@ -120,6 +77,8 @@ export function AppraisalWizard() {
         recent_sales_months: data.recent_sales_months,
         market_analysis_depth: data.market_analysis_depth,
         features: data.features,
+        property_postcode: data.property_postcode,
+        is_public: data.is_public,
       };
 
       // Create appraisal
@@ -136,7 +95,6 @@ export function AppraisalWizard() {
         floor_area: data.floor_area,
         year_built: data.year_built,
         status: 'pending',
-        is_public: data.is_public,
         metadata: metadata
       };
 

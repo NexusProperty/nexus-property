@@ -1,6 +1,6 @@
 import { UseFormReturn } from "react-hook-form";
 import { useState } from "react";
-import { z } from "zod";
+import { AppraisalFormValues } from "@/types/appraisal-schema";
 
 import {
   FormControl,
@@ -16,19 +16,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PlusIcon, XIcon } from "lucide-react";
 
-const appraisalFormSchema = z.object({
-  bedrooms: z.number().min(0).optional().nullable(),
-  bathrooms: z.number().min(0).optional().nullable(),
-  land_size: z.number().min(0).optional().nullable(),
-  floor_area: z.number().min(0).optional().nullable(),
-  year_built: z.number().min(1800).max(new Date().getFullYear()).optional().nullable(),
-  features: z.array(z.string()).optional().nullable(),
-});
-
-type AppraisalFormValues = z.infer<typeof appraisalFormSchema>;
-
 interface PropertyFeaturesStepProps {
-  form: UseFormReturn<any>;
+  form: UseFormReturn<AppraisalFormValues>;
 }
 
 export function PropertyFeaturesStep({ form }: PropertyFeaturesStepProps) {
