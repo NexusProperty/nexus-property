@@ -1,9 +1,9 @@
 import React from "react";
 import { Navigate } from "react-router-dom";
-import ForgotPasswordForm from "@/components/auth/ForgotPasswordForm";
+import ResetPasswordForm from "@/components/auth/ResetPasswordForm";
 import { useAuth } from "@/contexts/AuthContext";
 
-const ForgotPassword: React.FC = () => {
+const ResetPassword: React.FC = () => {
   const { isAuthenticated, isLoading } = useAuth();
 
   // If already authenticated, redirect to dashboard
@@ -13,9 +13,9 @@ const ForgotPassword: React.FC = () => {
 
   return (
     <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center bg-gradient-to-br from-blue-50 to-teal-50 p-4">
-      <ForgotPasswordForm />
+      <ResetPasswordForm />
     </div>
   );
 };
 
-export default ForgotPassword;
+export default ResetPassword; 
