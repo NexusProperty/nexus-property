@@ -1,7 +1,7 @@
-import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.21.0';
+// Test utility for the ai-market-analysis function
+// This file contains an exported version of the generateMarketAnalysis function
 
-interface MarketAnalysisRequest {
+export interface MarketAnalysisRequest {
   appraisalId: string;
   propertyType: string;
   suburb: string;
@@ -18,7 +18,7 @@ interface MarketAnalysisRequest {
   };
 }
 
-interface MarketAnalysisResponse {
+export interface MarketAnalysisResponse {
   success: boolean;
   error?: string;
   data?: {
@@ -31,7 +31,7 @@ interface MarketAnalysisResponse {
 }
 
 // Real implementation of AI market analysis using Google Vertex AI/Gemini API
-async function generateMarketAnalysis(request: MarketAnalysisRequest): Promise<MarketAnalysisResponse> {
+export async function generateMarketAnalysis(request: MarketAnalysisRequest): Promise<MarketAnalysisResponse> {
   // Log the request details
   console.log(JSON.stringify({
     level: 'info',
@@ -195,105 +195,4 @@ function extractSection(text: string, sectionTitle: string, nextSectionTitle: st
   
   const match = text.match(sectionRegex);
   return match ? match[1].trim() : null;
-}
-
-// Handle incoming HTTP requests
-serve(async (req: Request) => {
-  // Log incoming request
-  console.log(JSON.stringify({
-    level: 'info',
-    message: 'Received request',
-    method: req.method,
-    url: req.url,
-  }));
-  
-  // CORS headers
-  const headers = {
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-    'Content-Type': 'application/json',
-  };
-  
-  // Handle preflight CORS
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers });
-  }
-  
-  try {
-    // Only accept POST requests
-    if (req.method !== 'POST') {
-      throw new Error('Method not allowed. Use POST.');
-    }
-    
-    // Parse request body
-    const requestData = await req.json();
-    
-    // Validate request data
-    if (!requestData.appraisalId || !requestData.propertyType || !requestData.suburb || !requestData.city) {
-      throw new Error('Missing required fields: appraisalId, propertyType, suburb, or city');
-    }
-    
-    // Create Supabase client using environment variables
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
-    
-    // Verify JWT token (authentication)
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      throw new Error('Missing Authorization header');
-    }
-    
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
-    
-    if (authError || !user) {
-      throw new Error('Unauthorized: Invalid token');
-    }
-    
-    // Log authenticated user
-    console.log(JSON.stringify({
-      level: 'info',
-      message: 'Authenticated user',
-      userId: user.id,
-    }));
-    
-    // Generate market analysis
-    const analysisRequest: MarketAnalysisRequest = {
-      appraisalId: requestData.appraisalId,
-      propertyType: requestData.propertyType,
-      suburb: requestData.suburb,
-      city: requestData.city,
-      recentSales: requestData.recentSales,
-      marketTrends: requestData.marketTrends,
-    };
-    
-    const analysis = await generateMarketAnalysis(analysisRequest);
-    
-    // Return response
-    return new Response(
-      JSON.stringify(analysis),
-      { headers }
-    );
-  } catch (error) {
-    // Log error
-    console.error(JSON.stringify({
-      level: 'error',
-      message: 'Error processing request',
-      error: error.message,
-    }));
-    
-    // Return error response
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: error.message,
-      }),
-      { 
-        status: 400, 
-        headers 
-      }
-    );
-  }
-}); 
+} 

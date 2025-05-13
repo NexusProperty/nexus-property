@@ -52,7 +52,7 @@ The following environment variables are automatically available to the Edge Func
 - `SUPABASE_ANON_KEY`: [ANON_KEY]
 
 ## Testing Results
-The deployed Edge Functions were tested using cURL commands to verify their accessibility:
+The deployed Edge Functions were initially tested using cURL commands with the anon key:
 
 ```bash
 curl --request POST 'https://anrpboahhkahdprohtln.supabase.co/functions/v1/property-data' \
@@ -61,11 +61,44 @@ curl --request POST 'https://anrpboahhkahdprohtln.supabase.co/functions/v1/prope
   --data '{"address": "123 Main Street", "suburb": "Example Suburb", "city": "Example City", "propertyType": "house"}'
 ```
 
-All functions responded with an "Unauthorized: Invalid token" error, which is expected behavior when using the anon key as a bearer token instead of a valid user JWT token. This confirms that:
+All functions initially responded with an "Unauthorized: Invalid token" error as expected when using the anon key directly as a bearer token.
 
-1. The functions are successfully deployed and accessible
-2. The authentication verification is working correctly
-3. The functions are properly integrated with Supabase Auth
+### Successful Authentication Testing
+
+After obtaining a valid JWT token from a logged-in user, all three Edge Functions were successfully tested and responded with proper data:
+
+1. **Property Data Function**:
+   ```bash
+   curl --request POST 'https://anrpboahhkahdprohtln.supabase.co/functions/v1/property-data' \
+     --header 'Authorization: Bearer [JWT_TOKEN]' \
+     --header 'Content-Type: application/json' \
+     --data '{"address": "123 Main Street", "suburb": "Example Suburb", "city": "Example City", "propertyType": "house"}'
+   ```
+   Response: Successfully returned property details, comparable properties, and market trends.
+
+2. **AI Market Analysis Function**:
+   ```bash
+   curl --request POST 'https://anrpboahhkahdprohtln.supabase.co/functions/v1/ai-market-analysis' \
+     --header 'Authorization: Bearer [JWT_TOKEN]' \
+     --header 'Content-Type: application/json' \
+     --data '{"appraisalId": "123e4567-e89b-12d3-a456-426614174000", "propertyType": "house", "suburb": "Example Suburb", "city": "Example City", "marketTrends": {"medianPrice": 980000, "annualGrowth": 5.2, "salesVolume": 45, "daysOnMarket": 28}}'
+   ```
+   Response: Successfully returned market insights, buyer demand analysis, future trends, key selling points, and marketing strategy.
+
+3. **Property Valuation Function**:
+   ```bash
+   curl --request POST 'https://anrpboahhkahdprohtln.supabase.co/functions/v1/property-valuation' \
+     --header 'Authorization: Bearer [JWT_TOKEN]' \
+     --header 'Content-Type: application/json' \
+     --data '{"appraisalId": "123e4567-e89b-12d3-a456-426614174000", "propertyDetails": {...}, "comparableProperties": [...]}'
+   ```
+   Response: Successfully returned valuation range, confidence score, adjusted comparables, and valuation factors.
+
+These test results confirm that:
+1. All Edge Functions are properly deployed and accessible
+2. Authentication is working correctly
+3. The functions are processing and returning data as expected
+4. JWT token validation is functioning correctly
 
 To make successful requests to these functions in the application, you'll need to:
 1. Have users authenticate through Supabase Auth
