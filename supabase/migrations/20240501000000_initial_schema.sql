@@ -3,8 +3,8 @@
 -- Sets up appropriate indexes and constraints
 -- Implements RLS policies for secure data access
 
--- Enable RLS on all tables by default
-ALTER DATABASE postgres SET default_row_level_security = on;
+-- Note: We'll enable RLS on each table individually instead of setting a database-wide default
+-- ALTER DATABASE postgres SET default_row_level_security = on;
 
 -- Enable UUID generation
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";

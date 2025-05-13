@@ -5,8 +5,8 @@
 -- Enable UUID generation if not already enabled
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- Enable RLS on all tables by default
-ALTER DATABASE postgres SET default_row_level_security = on;
+-- Note: We'll enable RLS on each table individually instead of setting a database-wide default
+-- ALTER DATABASE postgres SET default_row_level_security = on;
 
 -- ======================================================
 -- TABLE DEFINITIONS
@@ -75,6 +75,18 @@ CREATE TABLE IF NOT EXISTS public.properties (
   status TEXT NOT NULL CHECK (status IN ('active', 'archived', 'draft')) DEFAULT 'active',
   metadata JSONB DEFAULT '{}'::jsonb
 );
+
+-- Check if team_id column exists in appraisals table, if not add it
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_name = 'appraisals' AND column_name = 'team_id'
+    ) THEN
+        ALTER TABLE public.appraisals ADD COLUMN team_id UUID REFERENCES public.teams(id) ON DELETE SET NULL;
+    END IF;
+END $$;
 
 -- Appraisals table
 -- For storing property appraisal data
