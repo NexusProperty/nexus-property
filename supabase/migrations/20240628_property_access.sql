@@ -118,9 +118,9 @@ AS $$
   -- Get properties owned by members of the team
   SELECT p.* FROM public.properties p
   JOIN public.team_members tm ON p.owner_id = tm.user_id
-  WHERE tm.team_id = $1
-  UNION
-  -- Get properties explicitly shared with the team (could be implemented via a team_property_access table)
-  SELECT p.* FROM public.properties p
-  WHERE p.team_id = $1;
+  WHERE tm.team_id = $1;
+  
+  -- Note: The original implementation included properties shared with teams,
+  -- but this requires a team_id column in property_access which doesn't exist yet.
+  -- This functionality will be added in a future migration.
 $$; 

@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Fragment } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getAppraisalWithComparables, deleteAppraisal, getAppraisalReport } from '@/services/appraisal';
 import { updateAppraisalWithPropertyData } from '@/services/property-data';
 import { requestPropertyValuation, isEligibleForValuation } from '@/services/property-valuation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Database } from '@/types/supabase';
+import { useAppraisalRealtimeUpdates, useComparablesRealtimeUpdates } from '@/hooks/useRealtimeSubscription';
 
 import {
   Card,
@@ -54,8 +55,12 @@ import {
   RefreshCw,
   DollarSign,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  FileDown,
+  MoreVertical,
+  Loader2
 } from 'lucide-react';
+import ReportGenerationButton from '@/components/ReportGenerationButton';
 
 // Base types from the database
 type BaseAppraisal = Database['public']['Tables']['appraisals']['Row'];
@@ -262,12 +267,18 @@ export function AppraisalDetail() {
   const [error, setError] = useState<string | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
-  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   const [isRequestingValuation, setIsRequestingValuation] = useState(false);
   const [valuationEligibility, setValuationEligibility] = useState<{ 
     eligible: boolean; 
     reasons: string[] 
   }>({ eligible: false, reasons: [] });
+  
+  // Set up realtime subscriptions if an ID is available
+  const appraisalId = id || '';
+  const { isConnected: isAppraisalConnected, lastChange: appraisalChange } = 
+    useAppraisalRealtimeUpdates(appraisalId);
+  const { isConnected: isComparablesConnected, lastChange: comparablesChange } = 
+    useComparablesRealtimeUpdates(appraisalId);
 
   // Fetch appraisal data
   const fetchAppraisal = async () => {
@@ -297,6 +308,57 @@ export function AppraisalDetail() {
   useEffect(() => {
     fetchAppraisal();
   }, [id]);
+
+  // Update data when realtime changes are received
+  useEffect(() => {
+    if (appraisalChange && appraisalChange.new) {
+      console.log('Realtime appraisal update:', appraisalChange);
+      
+      // Type assertion since we know this is an Appraisal
+      const newAppraisalData = appraisalChange.new as Appraisal;
+      
+      setAppraisal((prev) => {
+        if (!prev) return newAppraisalData;
+        return { ...prev, ...newAppraisalData };
+      });
+      
+      // Show toast notification for status changes
+      if (appraisal && newAppraisalData.status !== appraisal.status) {
+        toast({
+          title: 'Status Updated',
+          description: `Appraisal status changed to ${newAppraisalData.status}`,
+          variant: 'default',
+        });
+      }
+    }
+  }, [appraisalChange, toast, appraisal]);
+
+  // Update comparables when realtime changes are received
+  useEffect(() => {
+    if (comparablesChange) {
+      console.log('Realtime comparables update:', comparablesChange);
+      
+      // Handle different event types
+      if (comparablesChange.eventType === 'INSERT') {
+        const newComparable = comparablesChange.new as ComparableProperty;
+        setComparables((prev) => [...prev, newComparable]);
+      } else if (comparablesChange.eventType === 'UPDATE') {
+        const updatedComparable = comparablesChange.new as ComparableProperty;
+        setComparables((prev) => 
+          prev.map((c) => (c.id === updatedComparable.id ? { ...c, ...updatedComparable } : c))
+        );
+      } else if (comparablesChange.eventType === 'DELETE') {
+        const deletedComparable = comparablesChange.old as ComparableProperty;
+        setComparables((prev) => prev.filter((c) => c.id !== deletedComparable.id));
+      }
+    }
+  }, [comparablesChange]);
+
+  // Log realtime connection status
+  useEffect(() => {
+    console.log(`Appraisal realtime connection: ${isAppraisalConnected ? 'connected' : 'disconnected'}`);
+    console.log(`Comparables realtime connection: ${isComparablesConnected ? 'connected' : 'disconnected'}`);
+  }, [isAppraisalConnected, isComparablesConnected]);
 
   // Check eligibility for valuation when appraisal or comparables change
   useEffect(() => {
@@ -381,66 +443,13 @@ export function AppraisalDetail() {
     }
   };
 
-  // Handle report download
-  const handleDownloadReport = async () => {
-    if (!id) return;
-    
-    setIsGeneratingReport(true);
-    
-    try {
-      const result = await getAppraisalReport(id);
-      
-      if (result.success && result.data) {
-        // Open the report URL in a new tab
-        window.open(result.data, '_blank');
-      } else {
-        throw new Error(result.error || 'Failed to get report');
-      }
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'An unexpected error occurred',
-        variant: 'destructive',
+  // Add a new function to handle report URL updates
+  const handleReportGenerated = (reportUrl: string) => {
+    if (appraisal) {
+      setAppraisal({
+        ...appraisal,
+        report_url: reportUrl
       });
-    } finally {
-      setIsGeneratingReport(false);
-    }
-  };
-
-  // Handle requesting a valuation
-  const handleRequestValuation = async () => {
-    if (!id) return;
-    
-    setIsRequestingValuation(true);
-    
-    try {
-      const result = await requestPropertyValuation(id);
-      
-      if (result.success && result.data) {
-        toast({
-          title: 'Valuation Complete',
-          description: `Estimated value: $${result.data.valuationLow.toLocaleString()} - $${result.data.valuationHigh.toLocaleString()}`,
-        });
-        
-        // Refresh the appraisal data to show the new valuation
-        fetchAppraisal();
-      } else {
-        toast({
-          title: 'Error',
-          description: result.error || 'Failed to generate valuation',
-          variant: 'destructive',
-        });
-      }
-    } catch (error) {
-      console.error('Error requesting valuation:', error);
-      
-      toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'An unexpected error occurred',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsRequestingValuation(false);
     }
   };
 
@@ -500,6 +509,43 @@ export function AppraisalDetail() {
     return `$${price.toLocaleString()}`;
   };
 
+  // Handle requesting valuation
+  const handleRequestValuation = async () => {
+    if (!id) return;
+    
+    setIsRequestingValuation(true);
+    
+    try {
+      const result = await requestPropertyValuation(id);
+      
+      if (result.success && result.data) {
+        toast({
+          title: 'Valuation Complete',
+          description: `Estimated value: $${result.data.valuationLow.toLocaleString()} - $${result.data.valuationHigh.toLocaleString()}`,
+        });
+        
+        // Refresh the appraisal data to show the new valuation
+        fetchAppraisal();
+      } else {
+        toast({
+          title: 'Error',
+          description: result.error || 'Failed to generate valuation',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('Error requesting valuation:', error);
+      
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'An unexpected error occurred',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsRequestingValuation(false);
+    }
+  };
+
   // Loading state
   if (isLoading) {
     return (
@@ -537,26 +583,6 @@ export function AppraisalDetail() {
         </div>
         
         <div className="flex space-x-2">
-          {appraisal.status === 'completed' && (
-            <Button
-              variant="outline"
-              onClick={handleDownloadReport}
-              disabled={isGeneratingReport}
-            >
-              {isGeneratingReport ? (
-                <>
-                  <Spinner className="h-4 w-4 mr-2" />
-                  Loading...
-                </>
-              ) : (
-                <>
-                  <Download className="h-4 w-4 mr-2" />
-                  Download Report
-                </>
-              )}
-            </Button>
-          )}
-          
           <Button
             variant="outline"
             onClick={() => navigate(`/dashboard/appraisals/${id}/edit`)}
@@ -1026,24 +1052,13 @@ export function AppraisalDetail() {
               
               {appraisal.status === 'completed' && (
                 <div className="border-t pt-4 mt-4">
-                  <Button
-                    variant="default"
-                    className="w-full"
-                    onClick={handleDownloadReport}
-                    disabled={isGeneratingReport}
-                  >
-                    {isGeneratingReport ? (
-                      <>
-                        <Spinner className="h-4 w-4 mr-2" />
-                        Loading...
-                      </>
-                    ) : (
-                      <>
-                        <Download className="h-4 w-4 mr-2" />
-                        Download Report
-                      </>
-                    )}
-                  </Button>
+                  <ReportGenerationButton
+                    appraisalId={id}
+                    reportUrl={appraisal.report_url}
+                    variant="outline"
+                    size="sm"
+                    onReportGenerated={handleReportGenerated}
+                  />
                 </div>
               )}
             </CardContent>
@@ -1097,16 +1112,6 @@ export function AppraisalDetail() {
                   Generate Valuation
                 </>
               )}
-            </Button>
-          )}
-          
-          {appraisal?.status === 'completed' && (
-            <Button 
-              onClick={handleDownloadReport}
-              disabled={!appraisal.report_url}
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Download Report
             </Button>
           )}
           

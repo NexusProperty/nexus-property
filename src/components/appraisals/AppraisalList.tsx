@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { getUserAppraisals, searchAppraisals } from '@/services/appraisal';
 import { Database } from '@/types/supabase';
+import { useUserAppraisalsRealtimeUpdates } from '@/hooks/useRealtimeSubscription';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -30,7 +31,8 @@ import {
   X, 
   AlertCircle, 
   Clock,
-  ArrowUpDown 
+  ArrowUpDown,
+  WifiOff 
 } from 'lucide-react';
 
 type Appraisal = Database['public']['Tables']['appraisals']['Row'];
@@ -46,6 +48,11 @@ export function AppraisalList() {
   const [sortBy, setSortBy] = useState<SortOption>('created_desc');
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  // Set up realtime subscription for user's appraisals
+  const userId = user?.id || '';
+  const { isConnected: isRealtimeConnected, lastChange: appraisalChange } = 
+    useUserAppraisalsRealtimeUpdates(userId);
 
   // Fetch appraisals on component mount
   useEffect(() => {
@@ -73,6 +80,35 @@ export function AppraisalList() {
     
     fetchAppraisals();
   }, [user]);
+
+  // Handle realtime updates to appraisals
+  useEffect(() => {
+    if (!appraisalChange || !user) return;
+    
+    console.log('Appraisal realtime update received:', appraisalChange);
+    
+    // Type assertion to access properties
+    const newRecord = appraisalChange.new as Appraisal | null;
+    
+    // Only process changes for this user's appraisals
+    if (newRecord && newRecord.user_id === user.id) {
+      if (appraisalChange.eventType === 'INSERT') {
+        // Add new appraisal to the list
+        setAppraisals(prev => [newRecord, ...prev]);
+      } else if (appraisalChange.eventType === 'UPDATE') {
+        // Update existing appraisal
+        setAppraisals(prev => 
+          prev.map(a => a.id === newRecord.id ? newRecord : a)
+        );
+      } else if (appraisalChange.eventType === 'DELETE') {
+        // Remove deleted appraisal
+        const deletedAppraisal = appraisalChange.old as Appraisal;
+        setAppraisals(prev => 
+          prev.filter(a => a.id !== deletedAppraisal.id)
+        );
+      }
+    }
+  }, [appraisalChange, user]);
 
   // Filter and sort appraisals when search query, status filter, or sort option changes
   useEffect(() => {
@@ -199,10 +235,27 @@ export function AppraisalList() {
       <div className="flex items-center justify-between">
         <h2 className="text-3xl font-bold">Appraisals</h2>
         
-        <Button onClick={() => navigate('/dashboard/appraisals/new')}>
-          <PlusCircle className="h-4 w-4 mr-2" />
-          New Appraisal
-        </Button>
+        <div className="flex items-center gap-3">
+          {isRealtimeConnected ? (
+            <span className="text-xs text-green-600 flex items-center">
+              <span className="relative mr-1.5">
+                <span className="block h-2 w-2 rounded-full bg-green-600"></span>
+                <span className="block absolute top-0 left-0 h-2 w-2 rounded-full bg-green-600 animate-ping opacity-75"></span>
+              </span>
+              Realtime
+            </span>
+          ) : (
+            <span className="text-xs text-gray-500 flex items-center">
+              <WifiOff className="h-3 w-3 mr-1" />
+              Offline
+            </span>
+          )}
+          
+          <Button onClick={() => navigate('/dashboard/appraisals/new')}>
+            <PlusCircle className="h-4 w-4 mr-2" />
+            New Appraisal
+          </Button>
+        </div>
       </div>
       
       {/* Search and filters */}

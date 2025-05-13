@@ -1,86 +1,101 @@
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.21.0';
+import { 
+  generatePrompt, 
+  PromptTemplate, 
+  PromptContext, 
+  PromptOptions, 
+  formatAIResponse,
+  MarketAnalysisResponse
+} from '../utils/prompt-generator.ts';
 
 interface MarketAnalysisRequest {
   appraisalId: string;
   propertyType: string;
   suburb: string;
   city: string;
+  bedrooms?: number;
+  bathrooms?: number;
+  landSize?: number;
+  floorArea?: number;
+  yearBuilt?: number;
+  features?: string[];
   recentSales?: Array<{
     price: number;
     date: string;
+    address?: string;
+    propertyType?: string;
+    bedrooms?: number;
+    bathrooms?: number;
   }>;
   marketTrends?: {
-    medianPrice: number;
-    annualGrowth: number;
-    salesVolume: number;
-    daysOnMarket: number;
+    medianPrice?: number;
+    annualGrowth?: number;
+    salesVolume?: number;
+    daysOnMarket?: number;
+    demandScore?: number;
   };
+  promptOptions?: PromptOptions;
 }
 
-interface MarketAnalysisResponse {
+interface ApiResponse {
   success: boolean;
   error?: string;
-  data?: {
-    marketInsights: string;
-    buyerDemandAnalysis: string;
-    futureTrends: string;
-    keySellingPoints: string[];
-    recommendedMarketingStrategy: string;
-  };
+  data?: MarketAnalysisResponse;
 }
 
-// Real implementation of AI market analysis using Google Vertex AI/Gemini API
-async function generateMarketAnalysis(request: MarketAnalysisRequest): Promise<MarketAnalysisResponse> {
+// Generate market analysis using Google Vertex AI/Gemini API
+async function generateMarketAnalysis(request: MarketAnalysisRequest): Promise<ApiResponse> {
   // Log the request details
   console.log(JSON.stringify({
     level: 'info',
     message: 'Generating AI market analysis using Google Vertex AI/Gemini',
-    request,
+    request: {
+      appraisalId: request.appraisalId,
+      propertyType: request.propertyType,
+      suburb: request.suburb,
+      city: request.city,
+      promptOptions: request.promptOptions,
+    },
   }));
   
   try {
     // Get API key from environment variables, with fallback to the provided key
     const apiKey = Deno.env.get('GOOGLE_VERTEX_API_KEY') || 'AIzaSyCg9azKXqr590cVrV7K3uRKGQMcGl6U-Ec';
     
-    // Format recent sales data for the prompt
-    const recentSalesText = request.recentSales?.length 
-      ? `Recent sales in the area:\n${request.recentSales.map(sale => 
-          `- $${sale.price.toLocaleString()} (${sale.date})`).join('\n')}`
-      : 'No recent sales data available.';
+    // Setup the prompt context
+    const promptContext: PromptContext = {
+      propertyType: request.propertyType,
+      suburb: request.suburb,
+      city: request.city,
+      bedrooms: request.bedrooms,
+      bathrooms: request.bathrooms,
+      landSize: request.landSize,
+      floorArea: request.floorArea,
+      yearBuilt: request.yearBuilt,
+      features: request.features,
+      recentSales: request.recentSales,
+      marketTrends: request.marketTrends,
+    };
     
-    // Format market trends for the prompt
-    const marketTrendsText = request.marketTrends 
-      ? `Current market trends:\n` +
-        `- Median Price: $${request.marketTrends.medianPrice.toLocaleString()}\n` +
-        `- Annual Growth: ${request.marketTrends.annualGrowth}%\n` +
-        `- Sales Volume: ${request.marketTrends.salesVolume} properties\n` +
-        `- Days on Market: ${request.marketTrends.daysOnMarket} days`
-      : 'No market trends data available.';
+    // Setup prompt options
+    const promptOptions: PromptOptions = request.promptOptions || {
+      detailLevel: 'detailed',
+      outputFormat: 'structured',
+      style: 'professional',
+    };
     
-    // Build the prompt for Gemini
-    const prompt = `
-    As a real estate market analysis expert, provide a detailed market analysis for a ${request.propertyType} in ${request.suburb}, ${request.city}.
-    
-    ${recentSalesText}
-    
-    ${marketTrendsText}
-    
-    Please provide the analysis in the following structured format:
-    1. Market Insights: A detailed analysis of the current market conditions for this property type in this location.
-    2. Buyer Demand Analysis: An analysis of current buyer behavior, preferences, and demand for this property type in this location.
-    3. Future Trends: Projections and forecasts for this market over the next 2-3 years.
-    4. Key Selling Points: List exactly five key selling points for this property based on the market conditions (return as a list).
-    5. Recommended Marketing Strategy: A specific strategy for marketing this property in the current market.
-    
-    For each section, provide detailed and specific information relevant to this ${request.propertyType} in ${request.suburb}, ${request.city}.
-    Don't use placeholder or generic information - base your analysis on the data provided.
-    `;
+    // Generate the prompt using the dynamic prompt generator
+    const prompt = generatePrompt(
+      PromptTemplate.MARKET_ANALYSIS,
+      promptContext,
+      promptOptions
+    );
     
     console.log(JSON.stringify({
       level: 'info',
       message: 'Sending request to Google Vertex AI/Gemini',
-      prompt: prompt.substring(0, 100) + '...',
+      promptLength: prompt.length,
     }));
     
     // Call the Gemini API
@@ -102,10 +117,10 @@ async function generateMarketAnalysis(request: MarketAnalysisRequest): Promise<M
             }
           ],
           generationConfig: {
-            temperature: 0.4,
+            temperature: promptOptions.temperature || 0.4,
             topK: 32,
             topP: 0.95,
-            maxOutputTokens: 1024,
+            maxOutputTokens: promptOptions.maxTokens || 1024,
           }
         }),
       }
@@ -125,50 +140,20 @@ async function generateMarketAnalysis(request: MarketAnalysisRequest): Promise<M
       responseStatus: geminiResponse.status,
     }));
     
-    // Process the response text
-    const fullResponseText = geminiData.candidates[0].content.parts[0].text;
+    // Get the response text
+    const rawResponseText = geminiData.candidates[0].content.parts[0].text;
     
-    // Extract sections using regex
-    const marketInsights = extractSection(fullResponseText, 'Market Insights', 'Buyer Demand Analysis') || 
-      'Market insights data not available';
-      
-    const buyerDemandAnalysis = extractSection(fullResponseText, 'Buyer Demand Analysis', 'Future Trends') || 
-      'Buyer demand analysis not available';
-      
-    const futureTrends = extractSection(fullResponseText, 'Future Trends', 'Key Selling Points') || 
-      'Future trends data not available';
+    // Format the response using our response formatter
+    const formattedResponse = formatAIResponse(
+      rawResponseText,
+      PromptTemplate.MARKET_ANALYSIS,
+      promptOptions.outputFormat
+    ) as MarketAnalysisResponse;
     
-    // Extract key selling points as an array
-    const keySellingPointsText = extractSection(fullResponseText, 'Key Selling Points', 'Recommended Marketing Strategy');
-    const keySellingPoints = keySellingPointsText ? 
-      keySellingPointsText.split('\n')
-        .filter(line => line.trim().startsWith('-') || line.trim().match(/^\d+\./))
-        .map(line => line.replace(/^-\s*|^\d+\.\s*/, '').trim())
-        .filter(line => line.length > 0) : 
-      ['No key selling points available'];
-    
-    // Ensure exactly 5 key selling points - either trim excess or add generic ones
-    const finalKeySellingPoints = keySellingPoints.length >= 5 ? 
-      keySellingPoints.slice(0, 5) : 
-      [
-        ...keySellingPoints,
-        ...Array(5 - keySellingPoints.length).fill('').map((_, i) => 
-          `Strong investment potential in ${request.suburb}`)
-      ];
-    
-    const recommendedMarketingStrategy = extractSection(fullResponseText, 'Recommended Marketing Strategy', null) || 
-      'Recommended marketing strategy not available';
-    
-    // Assemble the response
-    const response: MarketAnalysisResponse = {
+    // Assemble the final response
+    const response: ApiResponse = {
       success: true,
-      data: {
-        marketInsights: marketInsights.trim(),
-        buyerDemandAnalysis: buyerDemandAnalysis.trim(),
-        futureTrends: futureTrends.trim(),
-        keySellingPoints: finalKeySellingPoints,
-        recommendedMarketingStrategy: recommendedMarketingStrategy.trim(),
-      },
+      data: formattedResponse,
     };
     
     return response;
@@ -184,17 +169,6 @@ async function generateMarketAnalysis(request: MarketAnalysisRequest): Promise<M
       error: 'Failed to generate market analysis: ' + error.message,
     };
   }
-}
-
-// Helper function to extract sections from the AI response
-function extractSection(text: string, sectionTitle: string, nextSectionTitle: string | null): string | null {
-  const sectionRegex = new RegExp(
-    `${sectionTitle}:?\\s*([\\s\\S]+?)${nextSectionTitle ? `(?=${nextSectionTitle}:?)` : '$'}`, 
-    'i'
-  );
-  
-  const match = text.match(sectionRegex);
-  return match ? match[1].trim() : null;
 }
 
 // Handle incoming HTTP requests
@@ -249,7 +223,7 @@ serve(async (req: Request) => {
     const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
     
     if (authError || !user) {
-      throw new Error('Unauthorized: Invalid token');
+      throw new Error('Invalid token or user not found');
     }
     
     // Log authenticated user
@@ -259,41 +233,88 @@ serve(async (req: Request) => {
       userId: user.id,
     }));
     
-    // Generate market analysis
-    const analysisRequest: MarketAnalysisRequest = {
-      appraisalId: requestData.appraisalId,
-      propertyType: requestData.propertyType,
-      suburb: requestData.suburb,
-      city: requestData.city,
-      recentSales: requestData.recentSales,
-      marketTrends: requestData.marketTrends,
-    };
+    // Check if user has access to the appraisal
+    const { data: appraisal, error: appraisalError } = await supabaseClient
+      .from('appraisals')
+      .select('id, user_id, team_id')
+      .eq('id', requestData.appraisalId)
+      .single();
     
-    const analysis = await generateMarketAnalysis(analysisRequest);
+    if (appraisalError || !appraisal) {
+      throw new Error('Appraisal not found');
+    }
     
-    // Return response
+    // Check if user owns the appraisal or is in the team
+    const isOwner = appraisal.user_id === user.id;
+    let isTeamMember = false;
+    
+    if (appraisal.team_id) {
+      const { data: teamMember, error: teamError } = await supabaseClient
+        .from('team_members')
+        .select('id')
+        .eq('team_id', appraisal.team_id)
+        .eq('user_id', user.id)
+        .single();
+      
+      isTeamMember = !teamError && !!teamMember;
+    }
+    
+    if (!isOwner && !isTeamMember) {
+      throw new Error('Access denied. User does not have access to this appraisal');
+    }
+    
+    // Generate AI market analysis
+    const analysisResult = await generateMarketAnalysis(requestData);
+    
+    // If successful, update the appraisal with the analysis results
+    if (analysisResult.success && analysisResult.data) {
+      const updateData = {
+        ai_content: {
+          ...appraisal.ai_content,
+          marketAnalysis: analysisResult.data
+        },
+        updated_at: new Date().toISOString()
+      };
+      
+      const { error: updateError } = await supabaseClient
+        .from('appraisals')
+        .update(updateData)
+        .eq('id', requestData.appraisalId);
+      
+      if (updateError) {
+        console.error(JSON.stringify({
+          level: 'error',
+          message: 'Failed to update appraisal with analysis results',
+          error: updateError.message,
+        }));
+      } else {
+        console.log(JSON.stringify({
+          level: 'info',
+          message: 'Updated appraisal with analysis results',
+          appraisalId: requestData.appraisalId,
+        }));
+      }
+    }
+    
+    // Return the analysis result
     return new Response(
-      JSON.stringify(analysis),
+      JSON.stringify(analysisResult),
       { headers }
     );
+    
   } catch (error) {
-    // Log error
     console.error(JSON.stringify({
       level: 'error',
       message: 'Error processing request',
       error: error.message,
     }));
     
-    // Return error response
     return new Response(
       JSON.stringify({
         success: false,
         error: error.message,
       }),
-      { 
-        status: 400, 
-        headers 
-      }
+      { status: 400, headers }
     );
   }
 }); 
