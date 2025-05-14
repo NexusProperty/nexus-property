@@ -1,0 +1,19 @@
+{
+  "name": "nexus-property-verification-scripts",
+  "version": "1.0.0",
+  "description": "Verification scripts for Nexus Property",
+  "main": "index.js",
+  "scripts": {
+    "verify-csrf": "node verify-csrf-protection.js",
+    "debug-csrf": "node debug-verify-csrf.js",
+    "apply-csrf-fix": "node apply-csrf-fix.js",
+    "apply-direct-fix": "echo 'Please run the direct-csrf-fix.sql script in the Supabase SQL editor.'",
+    "debug-fix": "echo 'Please run the debug-csrf-protection.sql script in the Supabase SQL editor, then run debug-csrf.'",
+    "complete-fix": "echo 'Please run the csrf-fix-complete.sql script in the Supabase SQL editor for the most comprehensive fix.'",
+    "safe-fix": "echo 'Please run the csrf-fix-complete-safe.sql script in the Supabase SQL editor to avoid JSON syntax errors.'"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.21.0",
+    "dotenv": "^16.0.3"
+  }
+} 
