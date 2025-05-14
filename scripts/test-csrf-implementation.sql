@@ -26,7 +26,7 @@ BEGIN
   -- Step 2: Test token verification (should pass)
   RAISE NOTICE 'Step 2: Testing token verification with valid token...';
   
-  SELECT public.verify_csrf_token(test_token) INTO verification_result;
+  SELECT public.validate_csrf_token(test_token) INTO verification_result;
   IF verification_result = TRUE THEN
     RAISE NOTICE 'Success: Token verified correctly';
   ELSE
@@ -36,7 +36,7 @@ BEGIN
   -- Step 3: Test token reuse (should fail as tokens are one-time use)
   RAISE NOTICE 'Step 3: Testing token reuse (should fail)...';
   
-  SELECT public.verify_csrf_token(test_token) INTO verification_result;
+  SELECT public.validate_csrf_token(test_token) INTO verification_result;
   IF verification_result = FALSE THEN
     RAISE NOTICE 'Success: Token reuse was correctly prevented';
   ELSE
@@ -46,7 +46,7 @@ BEGIN
   -- Step 4: Test with invalid token (should fail)
   RAISE NOTICE 'Step 4: Testing with invalid token (should fail)...';
   
-  SELECT public.verify_csrf_token('invalid_token_' || gen_random_uuid()) INTO verification_result;
+  SELECT public.validate_csrf_token('invalid_token_' || gen_random_uuid()) INTO verification_result;
   IF verification_result = FALSE THEN
     RAISE NOTICE 'Success: Invalid token was correctly rejected';
   ELSE
