@@ -29,6 +29,11 @@ import NewPropertyPage from "./pages/dashboard/properties/new";
 import PropertyDetailPage from "./pages/dashboard/properties/[id]/index";
 import EditPropertyPage from "./pages/dashboard/properties/edit/[id]";
 
+// Appraisal pages
+import AppraisalsIndexPage from "./pages/dashboard/appraisals";
+import NewAppraisalPage from "./pages/dashboard/appraisals/new";
+import AppraisalDetailPage from "./pages/dashboard/appraisals/[id]";
+
 // UI Components
 import UIComponentsPage from "./pages/dashboard/ui-components";
 
@@ -62,8 +67,12 @@ const App = () => (
                 <Route path="/dashboard/properties/:id" element={<PropertyDetailPage />} />
                 <Route path="/dashboard/properties/edit/:id" element={<EditPropertyPage />} />
                 
+                {/* Appraisal routes */}
+                <Route path="/dashboard/appraisals" element={<AppraisalsIndexPage />} />
+                <Route path="/dashboard/appraisals/new" element={<NewAppraisalPage />} />
+                <Route path="/dashboard/appraisals/:id" element={<AppraisalDetailPage />} />
+                
                 {/* Agent-specific routes */}
-                <Route path="/dashboard/appraisals" element={<div>Appraisals</div>} />
                 <Route path="/dashboard/clients" element={<div>Clients</div>} />
                 <Route path="/dashboard/reports" element={<div>Reports</div>} />
                 

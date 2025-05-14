@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { PropertyForm } from '@/components/properties/PropertyForm';
+import { MultiStepPropertyForm } from '@/components/properties/MultiStepPropertyForm';
 import { getProperty } from '@/services/property';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -88,7 +88,7 @@ export default function EditPropertyPage() {
         </p>
       </div>
 
-      <PropertyForm 
+      <MultiStepPropertyForm
         initialData={property} 
         isEdit={true} 
       />

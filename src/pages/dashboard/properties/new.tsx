@@ -1,5 +1,5 @@
 import React from 'react';
-import { PropertyForm } from '@/components/properties/PropertyForm';
+import { MultiStepPropertyForm } from '@/components/properties/MultiStepPropertyForm';
 
 export default function NewPropertyPage() {
   return (
@@ -8,7 +8,7 @@ export default function NewPropertyPage() {
         <h2 className="text-3xl font-bold">Add New Property</h2>
       </div>
       
-      <PropertyForm />
+      <MultiStepPropertyForm />
     </div>
   );
 } 
