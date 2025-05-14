@@ -1,6 +1,12 @@
 import { supabase } from '../lib/supabase';
-import { getAppraisalWithComparables, updateAppraisalStatus } from './appraisal';
+import { getAppraisalWithComparables } from './appraisal';
 import { Database } from '@/types/supabase';
+import { PropertyValuationData } from '@/data/property-valuation-data';
+import { comparablePropertySchema, propertyDetailsSchema, valuationRequestSchema, valuationResultsSchema } from '@/lib/zodSchemas';
+import { createValidationErrorResponse } from '@/utils/validationErrors';
+
+// Initialize the data layer
+const valuationData = new PropertyValuationData();
 
 // Database types
 type Appraisal = Database['public']['Tables']['appraisals']['Row'];
@@ -80,6 +86,23 @@ interface ValuationResponse {
  */
 export async function requestPropertyValuation(appraisalId: string): Promise<ValuationResponse> {
   try {
+    // Validate appraisalId
+    try {
+      const result = valuationRequestSchema.shape.appraisalId.safeParse(appraisalId);
+      if (!result.success) {
+        const errorResponse = createValidationErrorResponse(result.error, 'Invalid appraisal ID format');
+        return {
+          success: false,
+          error: errorResponse.error,
+        };
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Invalid appraisal ID format',
+      };
+    }
+
     // Get the current user's auth token
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
@@ -87,7 +110,7 @@ export async function requestPropertyValuation(appraisalId: string): Promise<Val
     }
 
     // Update appraisal status to 'awaiting_valuation'
-    await updateAppraisalStatus(
+    await valuationData.updateAppraisalStatus(
       appraisalId,
       'awaiting_valuation',
       { reason: 'Valuation algorithm processing started' }
@@ -115,6 +138,48 @@ export async function requestPropertyValuation(appraisalId: string): Promise<Val
       yearBuilt: appraisal.year_built ?? undefined,
     };
     
+    // Validate property details
+    try {
+      const result = propertyDetailsSchema.safeParse(propertyDetails);
+      if (!result.success) {
+        const errorResponse = createValidationErrorResponse(
+          result.error, 
+          'Property details validation failed'
+        );
+        
+        await valuationData.updateAppraisalStatus(
+          appraisalId,
+          'error',
+          { 
+            reason: 'Property details validation failed',
+            metadata: { 
+              error: errorResponse.error,
+              validationErrors: errorResponse.metadata?.validationErrors
+            }
+          }
+        );
+        
+        return {
+          success: false,
+          error: errorResponse.error,
+        };
+      }
+    } catch (error) {
+      await valuationData.updateAppraisalStatus(
+        appraisalId,
+        'error',
+        { 
+          reason: 'Property details validation failed',
+          metadata: { error: error instanceof Error ? error.message : 'Invalid property details' }
+        }
+      );
+      
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Invalid property details',
+      };
+    }
+    
     // Map comparables to required format
     const comparableProperties: ComparableProperty[] = comparables.map(comp => {
       // Extract distance from metadata if available
@@ -139,12 +204,127 @@ export async function requestPropertyValuation(appraisalId: string): Promise<Val
       };
     });
     
-    // Create valuation request
+    // Validate each comparable property
+    try {
+      const validationErrors = [];
+      
+      for (let i = 0; i < comparableProperties.length; i++) {
+        const result = comparablePropertySchema.safeParse(comparableProperties[i]);
+        if (!result.success) {
+          validationErrors.push({
+            index: i,
+            property: comparableProperties[i],
+            errors: result.error
+          });
+        }
+      }
+      
+      // If we have validation errors, format and return them
+      if (validationErrors.length > 0) {
+        // Create a comprehensive error message
+        const errorMessage = `${validationErrors.length} comparable properties failed validation`;
+        
+        await valuationData.updateAppraisalStatus(
+          appraisalId,
+          'error',
+          { 
+            reason: errorMessage,
+            metadata: { 
+              validationErrors: validationErrors.map(e => ({
+                index: e.index,
+                address: e.property.address,
+                errors: e.errors.errors.map(err => err.message)
+              }))
+            }
+          }
+        );
+        
+        return {
+          success: false,
+          error: errorMessage,
+        };
+      }
+      
+      // Validate that we have at least 3 comparable properties
+      if (comparableProperties.length < 3) {
+        const errorMessage = `At least 3 comparable properties are required for valuation (found ${comparableProperties.length})`;
+        
+        await valuationData.updateAppraisalStatus(
+          appraisalId,
+          'error',
+          { 
+            reason: errorMessage
+          }
+        );
+        
+        return {
+          success: false,
+          error: errorMessage,
+        };
+      }
+    } catch (error) {
+      await valuationData.updateAppraisalStatus(
+        appraisalId,
+        'error',
+        { 
+          reason: 'Comparable properties validation failed',
+          metadata: { error: error instanceof Error ? error.message : 'Invalid comparable properties' }
+        }
+      );
+      
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Invalid comparable properties',
+      };
+    }
+    
+    // Create and validate valuation request
     const valuationRequest: ValuationRequest = {
       appraisalId,
       propertyDetails,
       comparableProperties,
     };
+    
+    try {
+      const result = valuationRequestSchema.safeParse(valuationRequest);
+      if (!result.success) {
+        const errorResponse = createValidationErrorResponse(
+          result.error, 
+          'Valuation request validation failed'
+        );
+        
+        await valuationData.updateAppraisalStatus(
+          appraisalId,
+          'error',
+          { 
+            reason: 'Valuation request validation failed',
+            metadata: { 
+              error: errorResponse.error,
+              validationErrors: errorResponse.metadata?.validationErrors
+            }
+          }
+        );
+        
+        return {
+          success: false,
+          error: errorResponse.error,
+        };
+      }
+    } catch (error) {
+      await valuationData.updateAppraisalStatus(
+        appraisalId,
+        'error',
+        { 
+          reason: 'Valuation request validation failed',
+          metadata: { error: error instanceof Error ? error.message : 'Invalid valuation request' }
+        }
+      );
+      
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Invalid valuation request',
+      };
+    }
     
     // Call the Edge Function
     const { data, error } = await supabase.functions.invoke('property-valuation', {
@@ -156,7 +336,7 @@ export async function requestPropertyValuation(appraisalId: string): Promise<Val
     
     if (error) {
       // Update appraisal status to indicate error
-      await updateAppraisalStatus(
+      await valuationData.updateAppraisalStatus(
         appraisalId,
         'error',
         { 
@@ -176,22 +356,74 @@ export async function requestPropertyValuation(appraisalId: string): Promise<Val
         valuationConfidence 
       } = data.data;
       
-      // Update the appraisal with the valuation results
-      const { error: updateError } = await supabase
-        .from('appraisals')
-        .update({
-          valuation_low: valuationLow,
-          valuation_high: valuationHigh,
-          valuation_confidence: valuationConfidence,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', appraisalId);
+      // Validate valuation results
+      try {
+        const valuationResults = {
+          valuationLow,
+          valuationHigh,
+          valuationConfidence
+        };
         
-      if (updateError) {
-        console.error('Error updating appraisal with valuation results:', updateError);
+        const result = valuationResultsSchema.safeParse(valuationResults);
+        if (!result.success) {
+          const errorResponse = createValidationErrorResponse(
+            result.error, 
+            'Valuation results validation failed'
+          );
+          
+          await valuationData.updateAppraisalStatus(
+            appraisalId,
+            'error',
+            { 
+              reason: 'Valuation results validation failed',
+              metadata: { 
+                error: errorResponse.error,
+                validationErrors: errorResponse.metadata?.validationErrors
+              }
+            }
+          );
+          
+          return {
+            success: false,
+            error: errorResponse.error,
+          };
+        }
+        
+        // Additional business rule validation
+        if (valuationLow > valuationHigh) {
+          throw new Error('Valuation low cannot be greater than valuation high');
+        }
+      } catch (error) {
+        await valuationData.updateAppraisalStatus(
+          appraisalId,
+          'error',
+          { 
+            reason: 'Valuation results validation failed',
+            metadata: { error: error instanceof Error ? error.message : 'Invalid valuation results' }
+          }
+        );
+        
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : 'Invalid valuation results',
+        };
+      }
+      
+      // Update the appraisal with the valuation results using the data layer
+      const updateResult = await valuationData.updateValuationResults(
+        appraisalId, 
+        {
+          valuationLow,
+          valuationHigh,
+          valuationConfidence
+        }
+      );
+        
+      if (!updateResult.success) {
+        console.error('Error updating appraisal with valuation results:', updateResult.error);
       } else {
         // Update status to valuation_complete
-        await updateAppraisalStatus(
+        await valuationData.updateAppraisalStatus(
           appraisalId,
           'valuation_complete',
           { 
@@ -220,36 +452,20 @@ export async function requestPropertyValuation(appraisalId: string): Promise<Val
  * Check if an appraisal is eligible for valuation 
  * (has property details and comparable properties)
  */
-export function isEligibleForValuation(
-  propertyData: Appraisal, 
-  comparablesCount: number
-): { eligible: boolean; reasons: string[] } {
-  const reasons: string[] = [];
-  
-  // Check required property details
-  if (!propertyData.property_address) {
-    reasons.push('Property address is missing');
+export async function isEligibleForValuation(
+  appraisalId: string
+): Promise<{ eligible: boolean; reasons: string[] }> {
+  try {
+    // Use the data layer to check eligibility
+    const result = await valuationData.getValuationEligibility(appraisalId);
+    return {
+      eligible: result.eligible,
+      reasons: result.reasons
+    };
+  } catch (error) {
+    return {
+      eligible: false,
+      reasons: [error instanceof Error ? error.message : 'An unknown error occurred']
+    };
   }
-  
-  if (!propertyData.property_suburb) {
-    reasons.push('Property suburb is missing');
-  }
-  
-  if (!propertyData.property_city) {
-    reasons.push('Property city is missing');
-  }
-  
-  if (!propertyData.property_type) {
-    reasons.push('Property type is missing');
-  }
-  
-  // Check if there are enough comparable properties
-  if (comparablesCount < 3) {
-    reasons.push(`Not enough comparable properties (${comparablesCount}/3 minimum)`);
-  }
-  
-  return { 
-    eligible: reasons.length === 0,
-    reasons
-  };
 } 

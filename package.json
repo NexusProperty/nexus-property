@@ -9,7 +9,10 @@
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
-    "verify:supabase": "node scripts/verify-supabase-config.js"
+    "verify:supabase": "node scripts/verify-supabase-config.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
@@ -62,7 +65,8 @@
     "tailwind-merge": "^2.5.2",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^0.9.3",
-    "zod": "^3.24.4"
+    "zod": "^3.24.4",
+    "zod-validation-error": "^3.4.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.0",

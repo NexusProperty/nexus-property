@@ -1,6 +1,7 @@
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.21.0';
 import { withCsrfProtection } from '../utils/csrf-middleware.ts';
+import { withAuth, getAuthUser } from '../utils/auth-middleware.ts';
 
 // Get environment variables
 const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
@@ -83,64 +84,6 @@ interface ValuationResult {
       annualGrowth: number;
     };
   };
-}
-
-// Authentication middleware function
-async function authenticateRequest(req: Request): Promise<{ 
-  authenticated: boolean; 
-  userId?: string; 
-  error?: string;
-}> {
-  try {
-    // Get the authorization header
-    const authHeader = req.headers.get('Authorization');
-    
-    if (!authHeader) {
-      return { 
-        authenticated: false, 
-        error: 'Missing Authorization header' 
-      };
-    }
-    
-    // Format should be "Bearer JWT_TOKEN"
-    const token = authHeader.replace('Bearer ', '');
-    
-    if (!token) {
-      return { 
-        authenticated: false, 
-        error: 'Invalid Authorization format' 
-      };
-    }
-    
-    // Create a Supabase client with the anon key
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
-    
-    // Verify the JWT
-    const { data: { user }, error } = await supabase.auth.getUser(token);
-    
-    if (error || !user) {
-      return { 
-        authenticated: false, 
-        error: error?.message || 'Authentication failed' 
-      };
-    }
-    
-    return { 
-      authenticated: true, 
-      userId: user.id 
-    };
-  } catch (error) {
-    console.error(JSON.stringify({
-      level: 'error',
-      message: 'Authentication error',
-      error: error.message
-    }));
-    
-    return { 
-      authenticated: false, 
-      error: `Authentication error: ${error.message}` 
-    };
-  }
 }
 
 // Main valuation function
@@ -656,42 +599,39 @@ function calculateMarketTrends(comparables: Array<ComparableProperty & {
 
 // Main request handler
 async function handleRequest(req: Request): Promise<Response> {
-  // Set CORS headers
-  const corsHeaders = {
+  // Log request received
+  console.log(JSON.stringify({
+    level: 'info',
+    message: 'Valuation request received',
+    method: req.method,
+  }));
+
+  // CORS headers for the response
+  const headers = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-csrf-token',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Content-Type': 'application/json',
   };
 
-  // Handle CORS preflight requests
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
-  }
-
-  // Only allow POST requests
-  if (req.method !== 'POST') {
-    return new Response(
-      JSON.stringify({ error: 'Method not allowed' }),
-      { 
-        status: 405, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
-    );
-  }
-
   try {
-    // Authenticate the request
-    const { authenticated, userId, error: authError } = await authenticateRequest(req);
-    
-    if (!authenticated) {
-      return new Response(
-        JSON.stringify({ error: authError || 'Authentication failed' }),
-        { 
-          status: 401, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-        }
-      );
+    // Only handle POST requests for this endpoint
+    if (req.method !== 'POST') {
+      throw new Error('Method not allowed. Use POST.');
     }
+
+    // Get the authenticated user (will be available because of the withAuth middleware)
+    const authUser = getAuthUser(req);
+    if (!authUser) {
+      throw new Error('User authentication failed');
+    }
+
+    // Log the authenticated user
+    console.log(JSON.stringify({
+      level: 'info',
+      message: 'Processing valuation request for user',
+      userId: authUser.userId,
+      userRole: authUser.userRole || 'no role'
+    }));
 
     // Parse the request body
     const requestData: ValuationRequest = await req.json();
@@ -702,7 +642,7 @@ async function handleRequest(req: Request): Promise<Response> {
         JSON.stringify({ error: 'Appraisal ID is required' }),
         { 
           status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+          headers: { ...headers } 
         }
       );
     }
@@ -715,7 +655,7 @@ async function handleRequest(req: Request): Promise<Response> {
       JSON.stringify(result),
       { 
         status: 200, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        headers: { ...headers } 
       }
     );
   } catch (error) {
@@ -741,5 +681,14 @@ async function handleRequest(req: Request): Promise<Response> {
   }
 }
 
-// Serve the function with CSRF protection
-serve(withCsrfProtection(handleRequest, { enforceForMutations: true })); 
+// Update the serve call to use both middlewares
+serve(
+  withCsrfProtection(
+    withAuth(handleRequest, { 
+      requireAuth: true,
+      // Optionally restrict to specific roles if needed
+      // allowedRoles: ['admin', 'agent']
+    }), 
+    { enforceForMutations: true }
+  )
+) 

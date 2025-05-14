@@ -1,8 +1,9 @@
-import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { Session, User } from '@supabase/supabase-js';
-import { getSession, getUser, onAuthStateChange } from '@/services/auth';
+import { getSession, getUser, onAuthStateChange, signOut } from '@/services/auth';
 import { getProfile } from '@/services/user';
 import { Database } from '@/types/supabase';
+import { initializeSessionHandler, stopTokenRefreshInterval, manualTokenRefresh } from '@/lib/session-handler';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 
@@ -16,6 +17,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   error: string | null;
   refreshProfile: () => Promise<void>;
+  refreshAuthToken: () => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -28,6 +30,7 @@ const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,
   error: null,
   refreshProfile: async () => {},
+  refreshAuthToken: async () => false,
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -43,6 +46,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isAuthenticating, setIsAuthenticating] = useState<boolean>(true);
   const [isLoadingProfile, setIsLoadingProfile] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const lastActivityTimestamp = useRef<number>(Date.now());
 
   /**
    * Fetch user profile from the database
@@ -107,6 +111,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, [fetchUserProfile]);
 
+  /**
+   * Force refresh the auth token
+   * This can be used after a period of inactivity
+   */
+  const refreshAuthToken = useCallback(async () => {
+    const success = await manualTokenRefresh();
+    
+    if (success) {
+      // Get updated session and user data
+      const currentSession = await getSession();
+      await handleAuthChange(currentSession);
+    }
+    
+    return success;
+  }, [handleAuthChange]);
+
   // Initialize auth on mount
   useEffect(() => {
     const initializeAuth = async () => {
@@ -114,12 +134,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setIsAuthenticating(true);
         setError(null);
         
+        // Initialize the session handler
+        await initializeSessionHandler();
+        
         const currentSession = await getSession();
         await handleAuthChange(currentSession);
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
         console.error('Error initializing auth:', errorMessage);
-        setError(`Authentication initialization error: ${errorMessage}`);
+        setError(`Authentication error: ${errorMessage}`);
       } finally {
         setIsAuthenticating(false);
       }
@@ -129,14 +152,54 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     // Set up the auth state change listener
     const { data: authListener } = onAuthStateChange(async (event, currentSession) => {
+      if (event === 'SIGNED_OUT') {
+        // Stop token refresh on sign out
+        stopTokenRefreshInterval();
+      }
+      
       await handleAuthChange(currentSession);
     });
 
     // Clean up the auth listener
     return () => {
       authListener.subscription.unsubscribe();
+      stopTokenRefreshInterval();
     };
   }, [handleAuthChange]);
+
+  // Handle user inactivity
+  useEffect(() => {
+    // Function to handle user activity
+    const handleUserActivity = () => {
+      // Reset the inactivity timer
+      lastActivityTimestamp.current = Date.now();
+    };
+    
+    // Set up activity listeners
+    window.addEventListener('mousedown', handleUserActivity);
+    window.addEventListener('keydown', handleUserActivity);
+    window.addEventListener('touchstart', handleUserActivity);
+    window.addEventListener('scroll', handleUserActivity);
+    
+    // Set up inactivity check (every minute)
+    const inactivityCheckInterval = setInterval(() => {
+      const inactiveTime = Date.now() - lastActivityTimestamp.current;
+      
+      // If inactive for more than 10 minutes and authenticated, refresh token
+      if (inactiveTime > 10 * 60 * 1000 && session) {
+        refreshAuthToken();
+      }
+    }, 60 * 1000);
+    
+    return () => {
+      // Clean up event listeners
+      window.removeEventListener('mousedown', handleUserActivity);
+      window.removeEventListener('keydown', handleUserActivity);
+      window.removeEventListener('touchstart', handleUserActivity);
+      window.removeEventListener('scroll', handleUserActivity);
+      clearInterval(inactivityCheckInterval);
+    };
+  }, [session, refreshAuthToken]);
 
   // Memoize the context value to prevent unnecessary re-renders
   const value = useMemo(() => ({
@@ -149,6 +212,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isAuthenticated: !!session,
     error,
     refreshProfile,
+    refreshAuthToken,
   }), [
     session,
     user, 
@@ -156,7 +220,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isAuthenticating, 
     isLoadingProfile,
     error,
-    refreshProfile
+    refreshProfile,
+    refreshAuthToken
   ]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
