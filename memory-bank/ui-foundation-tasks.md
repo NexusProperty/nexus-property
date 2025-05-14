@@ -48,9 +48,9 @@ This document outlines actionable tasks for implementing the UI foundation based
 - [x] Build Add/Edit Client form with contact preferences
 
 ### Reports
-- [ ] Implement Reports List with status indicators and filters
-- [ ] Create Report Detail page with preview and sharing options
-- [ ] Build Report Generation component with template selection
+- [x] Implement Reports List with status indicators and filters
+- [x] Create Report Detail page with preview and sharing options
+- [x] Build Report Generation component with template selection
 
 ### Settings
 - [ ] Implement Profile Settings page with user preferences
