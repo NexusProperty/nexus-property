@@ -53,8 +53,8 @@ This document outlines actionable tasks for implementing the UI foundation based
 - [x] Build Report Generation component with template selection
 
 ### Settings
-- [ ] Implement Profile Settings page with user preferences
-- [ ] Create Team Settings page with member management
+- [x] Implement Profile Settings page with user preferences
+- [x] Create Team Settings page with member management
 
 ## 3. Customer Portal Screens
 
@@ -148,9 +148,9 @@ This document outlines actionable tasks for implementing the UI foundation based
 - [ ] Appraisal review screens
 
 ### Phase 4: Advanced Agent Features
-- [ ] Enhanced appraisal components
-- [ ] Report generation functionality
-- [ ] Client management interface
+- [x] Enhanced appraisal components
+- [x] Report generation functionality
+- [x] Client management interface
 
 ### Phase 5: Admin Portal
 - [ ] User management screens
