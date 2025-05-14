@@ -8,7 +8,7 @@ DECLARE
   user_id UUID;
 BEGIN
   -- Get the user ID from auth.users
-  SELECT id INTO user_id FROM auth.users WHERE email = 'your-test-email@example.com';
+  SELECT id INTO user_id FROM auth.users WHERE email = 'jackchen1996@outlook.co.nz';
   
   IF user_id IS NULL THEN
     RAISE EXCEPTION 'User not found. Please check the email address.';
@@ -19,7 +19,7 @@ BEGIN
   
   -- Insert the profile
   INSERT INTO public.profiles (id, email, full_name, created_at, updated_at)
-  VALUES (user_id, 'jackchen1996@outlook.co.nz', 'Test User', NOW(), NOW())
+  VALUES (user_id, 'jackchen1996@outlook.co.nz', 'Weijie Chen', NOW(), NOW())
   ON CONFLICT (id) DO NOTHING;
   
   -- Re-enable RLS

@@ -502,9 +502,11 @@ export async function getSimilarProperties(
  */
 export async function getTeamProperties(teamId: string): Promise<PropertyResult<Property[]>> {
   try {
-    // Using a join to get properties owned by members of the team
+    // Using a database function to get properties owned by members of the team
     const { data, error } = await supabase
-      .rpc('get_team_properties', { team_id: teamId });
+      .from('properties')
+      .select('*')
+      .filter('team_id', 'eq', teamId);
     
     if (error) throw error;
     

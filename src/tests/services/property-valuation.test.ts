@@ -2,6 +2,14 @@ import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
 import { requestPropertyValuation, isEligibleForValuation } from '@/services/property-valuation';
 import { supabase } from '@/lib/supabase';
 import { mockPropertyValuationData } from '../mocks/property-valuation-data.mock';
+import { getAppraisalWithComparables } from '@/services/appraisal';
+import { 
+  valuationRequestSchema, 
+  propertyDetailsSchema,
+  comparablePropertySchema,
+  valuationResultsSchema 
+} from '@/lib/zodSchemas';
+import { createValidationErrorResponse } from '@/utils/validationErrors';
 
 // Mocking external dependencies
 vi.mock('@/services/appraisal', () => ({
@@ -117,24 +125,15 @@ describe('Property Valuation Service', () => {
   ];
   
   beforeEach(() => {
-    // Import dependencies for mocking
-    const { getAppraisalWithComparables } = require('@/services/appraisal');
-    const { 
-      valuationRequestSchema, 
-      propertyDetailsSchema, 
-      comparablePropertySchema, 
-      valuationResultsSchema 
-    } = require('@/lib/zodSchemas');
-    
-    // Default safeParse behavior for all schemas (success)
-    valuationRequestSchema.shape.appraisalId.safeParse.mockReturnValue({ success: true, data: validAppraisalId });
-    propertyDetailsSchema.safeParse.mockReturnValue({ success: true });
-    comparablePropertySchema.safeParse.mockReturnValue({ success: true });
-    valuationRequestSchema.safeParse.mockReturnValue({ success: true });
-    valuationResultsSchema.safeParse.mockReturnValue({ success: true });
+    // Set up default behaviors for mocks
+    vi.mocked(valuationRequestSchema.shape.appraisalId.safeParse).mockReturnValue({ success: true, data: validAppraisalId });
+    vi.mocked(propertyDetailsSchema.safeParse).mockReturnValue({ success: true });
+    vi.mocked(comparablePropertySchema.safeParse).mockReturnValue({ success: true });
+    vi.mocked(valuationRequestSchema.safeParse).mockReturnValue({ success: true });
+    vi.mocked(valuationResultsSchema.safeParse).mockReturnValue({ success: true });
     
     // Default successful appraisal fetch
-    getAppraisalWithComparables.mockResolvedValue({
+    vi.mocked(getAppraisalWithComparables).mockResolvedValue({
       success: true,
       error: null,
       data: {
@@ -206,10 +205,8 @@ describe('Property Valuation Service', () => {
   
   describe('requestPropertyValuation', () => {
     it('should validate appraisal ID format', async () => {
-      const { valuationRequestSchema } = require('@/lib/zodSchemas');
-      
       // Override safeParse for this test to fail
-      valuationRequestSchema.shape.appraisalId.safeParse.mockReturnValueOnce({ 
+      vi.mocked(valuationRequestSchema.shape.appraisalId.safeParse).mockReturnValueOnce({ 
         success: false 
       });
       
@@ -233,10 +230,8 @@ describe('Property Valuation Service', () => {
     });
     
     it('should fail if appraisal data cannot be fetched', async () => {
-      const { getAppraisalWithComparables } = require('@/services/appraisal');
-      
       // Mock appraisal fetch failure
-      getAppraisalWithComparables.mockResolvedValueOnce({
+      vi.mocked(getAppraisalWithComparables).mockResolvedValueOnce({
         success: false,
         error: 'Failed to fetch appraisal',
         data: null
@@ -249,10 +244,8 @@ describe('Property Valuation Service', () => {
     });
     
     it('should validate property details', async () => {
-      const { propertyDetailsSchema } = require('@/lib/zodSchemas');
-      
       // Mock invalid property details
-      propertyDetailsSchema.safeParse.mockReturnValueOnce({ success: false });
+      vi.mocked(propertyDetailsSchema.safeParse).mockReturnValueOnce({ success: false });
       
       const result = await requestPropertyValuation(validAppraisalId);
       

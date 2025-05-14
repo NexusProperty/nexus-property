@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useForm, FormProvider, Controller, FieldValues, UseFormReturn, SubmitHandler, FieldErrors } from "react-hook-form";
+import { useForm, FormProvider, Controller, FieldValues, UseFormReturn, SubmitHandler, FieldErrors, Control, DefaultValues } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { cn } from "@/lib/utils";
@@ -204,7 +204,7 @@ export function FormCheckbox({
     (required ? z.boolean().refine(val => val === true, "This field is required") : z.boolean().optional());
   
   // Create a form specific to this field if not provided externally
-  const internalForm = useForm({
+  const internalForm = useForm<Record<string, boolean>>({
     resolver: zodResolver(z.object({ [name]: fieldSchema })),
     defaultValues: { [name]: defaultChecked }
   });
@@ -217,13 +217,13 @@ export function FormCheckbox({
     <div className={cn("space-y-2", className)}>
       <Controller
         name={name}
-        control={control}
+        control={control as unknown as Control<Record<string, boolean>>}
         defaultValue={defaultChecked}
         render={({ field }) => (
           <div className="flex items-start space-x-2">
             <Checkbox
               id={name}
-              checked={field.value}
+              checked={field.value as boolean}
               onCheckedChange={field.onChange}
               disabled={disabled}
               className="mt-1"
@@ -280,7 +280,7 @@ export function FormRadioGroup({
     (required ? z.string().min(1, "This option is required") : z.string().optional());
   
   // Create a form specific to this field if not provided externally
-  const internalForm = useForm({
+  const internalForm = useForm<Record<string, string>>({
     resolver: zodResolver(z.object({ [name]: fieldSchema })),
     defaultValues: { [name]: defaultValue }
   });
@@ -301,12 +301,12 @@ export function FormRadioGroup({
       </div>
       <Controller
         name={name}
-        control={control}
+        control={control as unknown as Control<Record<string, string>>}
         defaultValue={defaultValue}
         render={({ field }) => (
           <RadioGroup
             onValueChange={field.onChange}
-            defaultValue={field.value}
+            defaultValue={field.value as string}
             disabled={disabled}
             className="flex flex-col space-y-1"
           >
@@ -362,7 +362,7 @@ export function FormSelect({
     (required ? z.string().min(1, "Please select an option") : z.string().optional());
   
   // Create a form specific to this field if not provided externally
-  const internalForm = useForm({
+  const internalForm = useForm<Record<string, string>>({
     resolver: zodResolver(z.object({ [name]: fieldSchema })),
     defaultValues: { [name]: defaultValue }
   });
@@ -383,12 +383,12 @@ export function FormSelect({
       </div>
       <Controller
         name={name}
-        control={control}
+        control={control as unknown as Control<Record<string, string>>}
         defaultValue={defaultValue}
         render={({ field }) => (
           <Select
             onValueChange={field.onChange}
-            defaultValue={field.value}
+            defaultValue={field.value as string}
             disabled={disabled}
           >
             <SelectTrigger id={name} className={cn(errors[name] && "border-destructive")}>
@@ -478,11 +478,12 @@ export function createFormSchema(fields: Record<string, z.ZodType<unknown>>) {
  */
 export function useZodForm<T extends z.ZodType<unknown>>(
   schema: T,
-  defaultValues: z.infer<T> = {}
+  defaultValues = {}
 ) {
   return useForm<z.infer<T>>({
     resolver: zodResolver(schema),
-    defaultValues: defaultValues as z.infer<T>,
+    // @ts-expect-error - Default values type compatibility issue
+    defaultValues,
   });
 }
 
