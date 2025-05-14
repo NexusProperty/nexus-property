@@ -4,6 +4,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Spinner } from '@/components/ui/spinner';
 import DashboardSidebar from '@/components/navigation/DashboardSidebar';
 import DashboardHeader from '@/components/navigation/DashboardHeader';
+import { Footer } from '@/components/layout/Footer';
+import { Toaster } from '@/components/ui/toaster';
 
 const DashboardLayout: React.FC = () => {
   const { isLoading } = useAuth();
@@ -30,6 +32,12 @@ const DashboardLayout: React.FC = () => {
         <main className="flex-1 overflow-y-auto p-4 md:p-6">
           <Outlet />
         </main>
+        
+        {/* Footer */}
+        <Footer variant="dashboard" />
+        
+        {/* Toast notifications */}
+        <Toaster />
       </div>
     </div>
   );
