@@ -1,8 +1,6 @@
-import { useState } from 'react';
 import { Button } from './ui/button';
 import { Loader2, FileDown } from 'lucide-react';
-import { generateAppraisalReport, getReportDownloadUrl, trackReportDownload } from '@/services/reportGeneration';
-import { useToast } from './ui/use-toast';
+import { useReportGeneration } from '@/hooks/useReportGeneration';
 
 interface ReportGenerationButtonProps {
   appraisalId: string;
@@ -16,6 +14,7 @@ interface ReportGenerationButtonProps {
 
 /**
  * Button component for generating and downloading PDF reports
+ * Uses the useReportGeneration hook to separate UI from business logic
  */
 export default function ReportGenerationButton({
   appraisalId,
@@ -26,70 +25,17 @@ export default function ReportGenerationButton({
   className = '',
   onReportGenerated
 }: ReportGenerationButtonProps) {
-  const [isGenerating, setIsGenerating] = useState(false);
-  const { toast } = useToast();
-
-  const handleClick = async () => {
-    if (isGenerating) return;
-    setIsGenerating(true);
-    
-    try {
-      if (reportUrl) {
-        // If report already exists, get a signed URL for download
-        const result = await getReportDownloadUrl(reportUrl);
-        
-        if (!result.success || !result.data?.downloadUrl) {
-          throw new Error(result.error || 'Failed to get report download URL');
-        }
-
-        // Track the download
-        await trackReportDownload(appraisalId);
-        
-        // Open in new tab
-        window.open(result.data.downloadUrl, '_blank');
-      } else {
-        // Generate a new report
-        toast({
-          title: 'Generating Report',
-          description: 'Please wait while we generate your PDF report...',
-        });
-        
-        const result = await generateAppraisalReport(appraisalId);
-        
-        if (!result.success || !result.data?.downloadUrl) {
-          throw new Error(result.error || 'Failed to generate report');
-        }
-        
-        // Notify the parent component
-        if (onReportGenerated && result.data.reportUrl) {
-          onReportGenerated(result.data.reportUrl);
-        }
-        
-        toast({
-          title: 'Report Generated',
-          description: 'Your PDF report has been generated successfully.',
-        });
-        
-        // Open in new tab
-        window.open(result.data.downloadUrl, '_blank');
-      }
-    } catch (error) {
-      console.error('Error with report:', error);
-      toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to process report',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsGenerating(false);
-    }
-  };
+  const { isGenerating, generateReport } = useReportGeneration({
+    appraisalId,
+    initialReportUrl: reportUrl,
+    onReportGenerated
+  });
 
   return (
     <Button
       variant={variant}
       size={size}
-      onClick={handleClick}
+      onClick={generateReport}
       disabled={isGenerating}
       className={className}
     >

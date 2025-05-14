@@ -21,33 +21,43 @@ FOR EACH ROW
 EXECUTE FUNCTION public.update_report_generated_at();
 
 -- Create storage bucket for reports if it doesn't exist
+-- Using DO block for anonymous code execution
 DO $$
+DECLARE
+  bucket_id TEXT;
 BEGIN
-  -- Create reports bucket (will error silently if it already exists)
-  PERFORM supabase_storage.create_bucket('reports', 'Reports bucket for property appraisal reports');
+  -- Try to create the bucket
+  SELECT id INTO bucket_id FROM storage.buckets WHERE name = 'reports';
   
-  -- Set reports bucket to private (RLS controlled) access
-  PERFORM supabase_storage.update_bucket('reports', true);
+  IF bucket_id IS NULL THEN
+    -- Bucket doesn't exist, create it
+    INSERT INTO storage.buckets (id, name, public, avif_autodetection, file_size_limit, allowed_mime_types)
+    VALUES ('reports', 'reports', false, false, 50000000, NULL);
+  END IF;
 EXCEPTION
   WHEN OTHERS THEN
-    RAISE NOTICE 'Could not create or update reports bucket: %', SQLERRM;
+    RAISE NOTICE 'Could not create reports bucket: %', SQLERRM;
 END;
 $$;
 
 -- Create RLS policies for accessing reports
-CREATE POLICY IF NOT EXISTS "Users can read their own reports" 
+DROP POLICY IF EXISTS "Users can read their own reports" ON storage.objects;
+CREATE POLICY "Users can read their own reports" 
 ON storage.objects FOR SELECT 
 USING (bucket_id = 'reports' AND (storage.foldername(name))[1] = auth.uid()::text);
 
-CREATE POLICY IF NOT EXISTS "Users can upload their own reports" 
+DROP POLICY IF EXISTS "Users can upload their own reports" ON storage.objects;
+CREATE POLICY "Users can upload their own reports" 
 ON storage.objects FOR INSERT 
 WITH CHECK (bucket_id = 'reports' AND (storage.foldername(name))[1] = auth.uid()::text);
 
-CREATE POLICY IF NOT EXISTS "Users can update their own reports" 
+DROP POLICY IF EXISTS "Users can update their own reports" ON storage.objects;
+CREATE POLICY "Users can update their own reports" 
 ON storage.objects FOR UPDATE
 USING (bucket_id = 'reports' AND (storage.foldername(name))[1] = auth.uid()::text);
 
-CREATE POLICY IF NOT EXISTS "Users can delete their own reports" 
+DROP POLICY IF EXISTS "Users can delete their own reports" ON storage.objects;
+CREATE POLICY "Users can delete their own reports" 
 ON storage.objects FOR DELETE
 USING (bucket_id = 'reports' AND (storage.foldername(name))[1] = auth.uid()::text);
 

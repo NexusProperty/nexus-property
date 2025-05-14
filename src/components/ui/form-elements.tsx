@@ -46,6 +46,8 @@ interface FormFieldProps {
   description?: string;
   disabled?: boolean;
   defaultValue?: string;
+  validation?: z.ZodType<string>;
+  form?: UseFormReturn<Record<string, unknown>>;
 }
 
 export function FormField({
@@ -58,8 +60,21 @@ export function FormField({
   description,
   disabled = false,
   defaultValue = "",
+  validation,
+  form: externalForm,
 }: FormFieldProps) {
-  const form = useForm();
+  // Create a schema for this field if validation is not provided
+  const fieldSchema = validation || 
+    (required ? z.string().min(1, "This field is required") : z.string().optional());
+  
+  // Create a form specific to this field if not provided externally
+  const internalForm = useForm({
+    resolver: zodResolver(z.object({ [name]: fieldSchema })),
+    defaultValues: { [name]: defaultValue }
+  });
+  
+  // Use either the externally provided form or the internal one
+  const form = externalForm || internalForm;
   const { register, formState: { errors } } = form;
   
   return (
@@ -77,7 +92,6 @@ export function FormField({
         type={type}
         placeholder={placeholder}
         disabled={disabled}
-        defaultValue={defaultValue}
         className={cn(errors[name] && "border-destructive")}
         {...register(name, { required })}
       />
@@ -102,6 +116,8 @@ interface FormTextareaProps {
   disabled?: boolean;
   defaultValue?: string;
   rows?: number;
+  validation?: z.ZodType<string>;
+  form?: UseFormReturn<Record<string, unknown>>;
 }
 
 export function FormTextarea({
@@ -114,8 +130,21 @@ export function FormTextarea({
   disabled = false,
   defaultValue = "",
   rows = 3,
+  validation,
+  form: externalForm,
 }: FormTextareaProps) {
-  const form = useForm();
+  // Create a schema for this field if validation is not provided
+  const fieldSchema = validation || 
+    (required ? z.string().min(1, "This field is required") : z.string().optional());
+  
+  // Create a form specific to this field if not provided externally
+  const internalForm = useForm({
+    resolver: zodResolver(z.object({ [name]: fieldSchema })),
+    defaultValues: { [name]: defaultValue }
+  });
+  
+  // Use either the externally provided form or the internal one
+  const form = externalForm || internalForm;
   const { register, formState: { errors } } = form;
   
   return (
@@ -132,7 +161,6 @@ export function FormTextarea({
         id={name}
         placeholder={placeholder}
         disabled={disabled}
-        defaultValue={defaultValue}
         rows={rows}
         className={cn(errors[name] && "border-destructive")}
         {...register(name, { required })}
@@ -156,6 +184,8 @@ interface FormCheckboxProps {
   description?: string;
   disabled?: boolean;
   defaultChecked?: boolean;
+  validation?: z.ZodType<boolean>;
+  form?: UseFormReturn<Record<string, unknown>>;
 }
 
 export function FormCheckbox({
@@ -166,8 +196,22 @@ export function FormCheckbox({
   description,
   disabled = false,
   defaultChecked = false,
+  validation,
+  form: externalForm,
 }: FormCheckboxProps) {
-  const { control, formState: { errors } } = useForm();
+  // Create a schema for this field if validation is not provided
+  const fieldSchema = validation || 
+    (required ? z.boolean().refine(val => val === true, "This field is required") : z.boolean().optional());
+  
+  // Create a form specific to this field if not provided externally
+  const internalForm = useForm({
+    resolver: zodResolver(z.object({ [name]: fieldSchema })),
+    defaultValues: { [name]: defaultChecked }
+  });
+  
+  // Use either the externally provided form or the internal one
+  const form = externalForm || internalForm;
+  const { control, formState: { errors } } = form;
   
   return (
     <div className={cn("space-y-2", className)}>
@@ -215,6 +259,8 @@ interface FormRadioGroupProps {
   description?: string;
   disabled?: boolean;
   defaultValue?: string;
+  validation?: z.ZodType<string>;
+  form?: UseFormReturn<Record<string, unknown>>;
 }
 
 export function FormRadioGroup({
@@ -226,8 +272,22 @@ export function FormRadioGroup({
   description,
   disabled = false,
   defaultValue = "",
+  validation,
+  form: externalForm,
 }: FormRadioGroupProps) {
-  const { control, formState: { errors } } = useForm();
+  // Create a schema for this field if validation is not provided
+  const fieldSchema = validation || 
+    (required ? z.string().min(1, "This option is required") : z.string().optional());
+  
+  // Create a form specific to this field if not provided externally
+  const internalForm = useForm({
+    resolver: zodResolver(z.object({ [name]: fieldSchema })),
+    defaultValues: { [name]: defaultValue }
+  });
+  
+  // Use either the externally provided form or the internal one
+  const form = externalForm || internalForm;
+  const { control, formState: { errors } } = form;
   
   return (
     <div className={cn("space-y-2", className)}>
@@ -280,6 +340,8 @@ interface FormSelectProps {
   disabled?: boolean;
   defaultValue?: string;
   placeholder?: string;
+  validation?: z.ZodType<string>;
+  form?: UseFormReturn<Record<string, unknown>>;
 }
 
 export function FormSelect({
@@ -292,8 +354,22 @@ export function FormSelect({
   disabled = false,
   defaultValue = "",
   placeholder = "Select an option",
+  validation,
+  form: externalForm,
 }: FormSelectProps) {
-  const { control, formState: { errors } } = useForm();
+  // Create a schema for this field if validation is not provided
+  const fieldSchema = validation || 
+    (required ? z.string().min(1, "Please select an option") : z.string().optional());
+  
+  // Create a form specific to this field if not provided externally
+  const internalForm = useForm({
+    resolver: zodResolver(z.object({ [name]: fieldSchema })),
+    defaultValues: { [name]: defaultValue }
+  });
+  
+  // Use either the externally provided form or the internal one
+  const form = externalForm || internalForm;
+  const { control, formState: { errors } } = form;
   
   return (
     <div className={cn("space-y-2", className)}>
@@ -381,37 +457,51 @@ export function FormActions({
   );
 }
 
-// Form validation with Zod
-export function createFormSchema(fields: Record<string, z.ZodTypeAny>) {
+// Form utility functions
+
+/**
+ * Creates a Zod schema from a record of field schemas
+ * 
+ * @param fields Record of field names mapped to their Zod schemas
+ * @returns A Zod object schema
+ */
+export function createFormSchema(fields: Record<string, z.ZodType<unknown>>) {
   return z.object(fields);
 }
 
-// Form initialization with schema
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function useZodForm<T extends z.ZodType<any, any>>(
+/**
+ * Creates a form using Zod validation
+ * 
+ * @param schema Zod schema for form validation
+ * @param defaultValues Default values for form fields
+ * @returns A form instance with Zod validation
+ */
+export function useZodForm<T extends z.ZodType<unknown>>(
   schema: T,
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  defaultValues?: any
+  defaultValues: z.infer<T> = {}
 ) {
   return useForm<z.infer<T>>({
     resolver: zodResolver(schema),
-    defaultValues,
+    defaultValues: defaultValues as z.infer<T>,
   });
 }
 
-// Helper to display form errors
+/**
+ * Component to display form errors
+ */
 export function FormErrors({ errors }: { errors: FieldErrors }) {
   if (Object.keys(errors).length === 0) return null;
   
   return (
-    <div className="bg-destructive/10 text-destructive rounded-md p-3 mt-6">
-      <h3 className="font-medium flex items-center gap-1">
-        <AlertCircle className="h-4 w-4" /> Please fix the following errors:
-      </h3>
-      <ul className="mt-2 text-sm list-disc pl-5">
-        {Object.entries(errors).map(([key, error]) => (
-          <li key={key}>
-            <span className="font-medium capitalize">{key.replace(/([A-Z])/g, ' $1')}</span>:{' '}
+    <div className="bg-destructive/10 text-destructive rounded-md p-3 space-y-1 mb-4">
+      <h4 className="font-medium flex items-center gap-1">
+        <AlertCircle className="h-4 w-4" />
+        Please fix the following errors:
+      </h4>
+      <ul className="list-disc pl-5">
+        {Object.entries(errors).map(([field, error]) => (
+          <li key={field}>
+            <span className="font-medium">{field}:</span>{" "}
             {error?.message?.toString()}
           </li>
         ))}

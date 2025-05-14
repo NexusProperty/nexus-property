@@ -1,5 +1,22 @@
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.21.0';
+import { withCsrfProtection } from '../utils/csrf-middleware.ts';
+import { withAuth, getAuthUser } from '../utils/auth-middleware.ts';
+
+// Get environment variables
+const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') || '';
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+
+// Validate required environment variables
+if (!supabaseUrl || !supabaseServiceKey) {
+  console.error(JSON.stringify({
+    level: 'error',
+    message: 'Missing required environment variables',
+    missingUrl: !supabaseUrl,
+    missingServiceKey: !supabaseServiceKey
+  }));
+}
 
 // Types for the request and response
 interface ValuationRequest {
@@ -580,123 +597,98 @@ function calculateMarketTrends(comparables: Array<ComparableProperty & {
   };
 }
 
-// Handle HTTP requests
-serve(async (req: Request) => {
-  // Set CORS headers
+// Main request handler
+async function handleRequest(req: Request): Promise<Response> {
+  // Log request received
+  console.log(JSON.stringify({
+    level: 'info',
+    message: 'Valuation request received',
+    method: req.method,
+  }));
+
+  // CORS headers for the response
   const headers = {
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-csrf-token',
     'Content-Type': 'application/json',
   };
-  
-  // Handle preflight CORS
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers });
-  }
-  
+
   try {
-    // Only accept POST requests
+    // Only handle POST requests for this endpoint
     if (req.method !== 'POST') {
       throw new Error('Method not allowed. Use POST.');
     }
-    
-    // Parse request body
-    const requestData = await req.json();
-    
-    // Create Supabase client
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    );
-    
-    // Authenticate the request
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      throw new Error('Missing Authorization header');
+
+    // Get the authenticated user (will be available because of the withAuth middleware)
+    const authUser = getAuthUser(req);
+    if (!authUser) {
+      throw new Error('User authentication failed');
     }
-    
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token);
-    
-    if (authError || !user) {
-      throw new Error('Unauthorized: Invalid token');
-    }
-    
-    // Log authenticated user
+
+    // Log the authenticated user
     console.log(JSON.stringify({
       level: 'info',
-      message: 'Authenticated user',
-      userId: user.id,
+      message: 'Processing valuation request for user',
+      userId: authUser.userId,
+      userRole: authUser.userRole || 'no role'
     }));
+
+    // Parse the request body
+    const requestData: ValuationRequest = await req.json();
     
-    // Validate required fields
+    // Validate the request
     if (!requestData.appraisalId) {
-      throw new Error('Missing required field: appraisalId');
+      return new Response(
+        JSON.stringify({ error: 'Appraisal ID is required' }),
+        { 
+          status: 400, 
+          headers: { ...headers } 
+        }
+      );
     }
+
+    // Calculate the valuation
+    const result = await calculateValuation(requestData);
     
-    if (!requestData.propertyDetails) {
-      throw new Error('Missing required field: propertyDetails');
-    }
-    
-    if (!requestData.comparableProperties || !Array.isArray(requestData.comparableProperties)) {
-      throw new Error('Missing or invalid field: comparableProperties');
-    }
-    
-    // Calculate valuation
-    const valuationResult = await calculateValuation(requestData);
-    
-    // If valuation was successful, update the appraisal in the database
-    if (valuationResult.success && valuationResult.data) {
-      const { error: updateError } = await supabaseClient
-        .from('appraisals')
-        .update({
-          valuation_low: valuationResult.data.valuationLow,
-          valuation_high: valuationResult.data.valuationHigh,
-          valuation_confidence: valuationResult.data.valuationConfidence,
-          status: 'completed',
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', requestData.appraisalId);
-      
-      if (updateError) {
-        console.error(JSON.stringify({
-          level: 'error',
-          message: 'Error updating appraisal',
-          error: updateError.message,
-          appraisalId: requestData.appraisalId
-        }));
-      } else {
-        console.log(JSON.stringify({
-          level: 'info',
-          message: 'Successfully updated appraisal',
-          appraisalId: requestData.appraisalId
-        }));
-      }
-    }
-    
-    // Return the valuation result
+    // Return the result
     return new Response(
-      JSON.stringify(valuationResult),
-      { headers }
+      JSON.stringify(result),
+      { 
+        status: 200, 
+        headers: { ...headers } 
+      }
     );
   } catch (error) {
-    // Log error
     console.error(JSON.stringify({
       level: 'error',
       message: 'Error processing request',
-      error: error.message,
+      error: error.message
     }));
     
-    // Return error response
     return new Response(
-      JSON.stringify({
-        success: false,
-        error: error.message,
+      JSON.stringify({ 
+        success: false, 
+        error: `Error processing request: ${error.message}` 
       }),
       { 
-        status: 400, 
-        headers 
+        status: 500, 
+        headers: { 
+          'Access-Control-Allow-Origin': '*',
+          'Content-Type': 'application/json' 
+        } 
       }
     );
   }
-}); 
+}
+
+// Update the serve call to use both middlewares
+serve(
+  withCsrfProtection(
+    withAuth(handleRequest, { 
+      requireAuth: true,
+      // Optionally restrict to specific roles if needed
+      // allowedRoles: ['admin', 'agent']
+    }), 
+    { enforceForMutations: true }
+  )
+) 

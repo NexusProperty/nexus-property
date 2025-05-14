@@ -2,7 +2,7 @@
 CREATE TABLE IF NOT EXISTS notifications (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
-  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   type VARCHAR(50) NOT NULL,
   title TEXT NOT NULL,
   message TEXT NOT NULL,
@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS notification_preferences (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT now() NOT NULL,
-  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   appraisal_status BOOLEAN DEFAULT TRUE,
   valuation_complete BOOLEAN DEFAULT TRUE,
   report_ready BOOLEAN DEFAULT TRUE,
@@ -51,7 +51,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Trigger to create notification preferences for new users
 CREATE OR REPLACE TRIGGER create_notification_preferences
-AFTER INSERT ON profiles
+AFTER INSERT ON auth.users
 FOR EACH ROW
 EXECUTE FUNCTION initialize_notification_preferences();
 
@@ -84,7 +84,7 @@ BEGIN
   
   -- Check if the user has enabled this notification type
   IF v_preferences.in_app_notifications = TRUE AND
-     CASE
+     (CASE
        WHEN p_type = 'appraisal_status' THEN v_preferences.appraisal_status
        WHEN p_type = 'valuation_complete' THEN v_preferences.valuation_complete
        WHEN p_type = 'report_ready' THEN v_preferences.report_ready
@@ -92,7 +92,7 @@ BEGIN
        WHEN p_type = 'property_access' THEN v_preferences.property_access
        WHEN p_type = 'system_message' THEN v_preferences.system_message
        ELSE TRUE
-     END = TRUE THEN
+     END) = TRUE THEN
     
     -- Create the notification
     INSERT INTO notifications (
