@@ -1515,3 +1515,51 @@ This roadmap focuses specifically on the tasks related to setting up, configurin
 *   **Client Configuration:** Ensure frontend and backend use the correct, securely configured Supabase clients.
 *   **Secrets Management:** Strictly use `supabase secrets` for backend, managed per environment.
 *   **RLS Testing:** Maintain comprehensive pgTAP tests for all RLS policies.
+
+{
+    "access_token": "eyJhbGciOiJIUzI1NiIsImtpZCI6Ik5sNXBSY0ZSeW1nUlJRcEciLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2FucnBib2FoaGthaGRwcm9odGxuLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiIzOTJkYzhlYS1lOTVkLTRiMDItODQ1YS1mOTIwMDM2MTI4Y2YiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzQ3MTE5MzU0LCJpYXQiOjE3NDcxMTU3NTQsImVtYWlsIjoibmV4dXNwcm9wZXJ0eUBnbWFpbC5jb20iLCJwaG9uZSI6IiIsImFwcF9tZXRhZGF0YSI6eyJwcm92aWRlciI6ImVtYWlsIiwicHJvdmlkZXJzIjpbImVtYWlsIl19LCJ1c2VyX21ldGFkYXRhIjp7ImVtYWlsX3ZlcmlmaWVkIjp0cnVlfSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJwYXNzd29yZCIsInRpbWVzdGFtcCI6MTc0NzExNTc1NH1dLCJzZXNzaW9uX2lkIjoiNmU3ZDg4MjUtZDBiOC00OGQ1LThlYjAtNDk5OGVmNWQzMmZkIiwiaXNfYW5vbnltb3VzIjpmYWxzZX0.c3jgC8fK_faNE7EU05vonO0xTaM56Fb7CLjJTwTtME4",
+    "token_type": "bearer",
+    "expires_in": 3600,
+    "expires_at": 1747119354,
+    "refresh_token": "unihifp33oju",
+    "user": {
+        "id": "392dc8ea-e95d-4b02-845a-f920036128cf",
+        "aud": "authenticated",
+        "role": "authenticated",
+        "email": "nexusproperty@gmail.com",
+        "email_confirmed_at": "2025-05-13T05:49:18.188106Z",
+        "phone": "",
+        "confirmed_at": "2025-05-13T05:49:18.188106Z",
+        "last_sign_in_at": "2025-05-13T05:55:54.853066275Z",
+        "app_metadata": {
+            "provider": "email",
+            "providers": [
+                "email"
+            ]
+        },
+        "user_metadata": {
+            "email_verified": true
+        },
+        "identities": [
+            {
+                "identity_id": "1a7baafd-e53e-4b96-9437-47cf022ae2cb",
+                "id": "392dc8ea-e95d-4b02-845a-f920036128cf",
+                "user_id": "392dc8ea-e95d-4b02-845a-f920036128cf",
+                "identity_data": {
+                    "email": "nexusproperty@gmail.com",
+                    "email_verified": false,
+                    "phone_verified": false,
+                    "sub": "392dc8ea-e95d-4b02-845a-f920036128cf"
+                },
+                "provider": "email",
+                "last_sign_in_at": "2025-05-13T05:49:18.18341Z",
+                "created_at": "2025-05-13T05:49:18.183472Z",
+                "updated_at": "2025-05-13T05:49:18.183472Z",
+                "email": "nexusproperty@gmail.com"
+            }
+        ],
+        "created_at": "2025-05-13T05:49:18.163756Z",
+        "updated_at": "2025-05-13T05:55:54.864011Z",
+        "is_anonymous": false
+    }
+}

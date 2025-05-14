@@ -1,0 +1,334 @@
+/* Responsive Utilities
+ * This file contains utility classes for responsive design
+ */
+
+/* Mobile-first approach: Default styles are for mobile devices */
+
+/* Breakpoint Variables (matches Tailwind defaults) */
+:root {
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1536px;
+}
+
+/* Responsive Helpers */
+
+/* Hide on specific breakpoints */
+.hidden-xs {
+  display: none;
+}
+
+@media (min-width: 640px) {
+  .hidden-sm {
+    display: none;
+  }
+  
+  .hidden-xs {
+    display: initial;
+  }
+  
+  .show-xs {
+    display: none;
+  }
+}
+
+@media (min-width: 768px) {
+  .hidden-md {
+    display: none;
+  }
+  
+  .show-sm {
+    display: none;
+  }
+}
+
+@media (min-width: 1024px) {
+  .hidden-lg {
+    display: none;
+  }
+  
+  .show-md {
+    display: none;
+  }
+}
+
+@media (min-width: 1280px) {
+  .hidden-xl {
+    display: none;
+  }
+  
+  .show-lg {
+    display: none;
+  }
+}
+
+/* Show only on specific breakpoints */
+.show-xs {
+  display: initial;
+}
+
+.show-sm, .show-md, .show-lg, .show-xl {
+  display: none;
+}
+
+@media (min-width: 640px) and (max-width: 767px) {
+  .show-sm {
+    display: initial;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .show-md {
+    display: initial;
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .show-lg {
+    display: initial;
+  }
+}
+
+@media (min-width: 1280px) {
+  .show-xl {
+    display: initial;
+  }
+}
+
+/* Responsive Spacing Adjustments */
+.responsive-margin {
+  margin: 0.5rem;
+}
+
+@media (min-width: 640px) {
+  .responsive-margin {
+    margin: 1rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .responsive-margin {
+    margin: 1.5rem;
+  }
+}
+
+.responsive-padding {
+  padding: 0.5rem;
+}
+
+@media (min-width: 640px) {
+  .responsive-padding {
+    padding: 1rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .responsive-padding {
+    padding: 1.5rem;
+  }
+}
+
+/* Responsive Typography */
+.responsive-text {
+  font-size: 0.875rem; /* 14px */
+}
+
+@media (min-width: 640px) {
+  .responsive-text {
+    font-size: 1rem; /* 16px */
+  }
+}
+
+@media (min-width: 1024px) {
+  .responsive-text {
+    font-size: 1.125rem; /* 18px */
+  }
+}
+
+/* Responsive Flex Layouts */
+.flex-stack {
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 768px) {
+  .flex-stack {
+    flex-direction: row;
+  }
+}
+
+/* Grid helpers */
+.responsive-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .responsive-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .responsive-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 1280px) {
+  .responsive-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* For tables that need to be responsive on small screens */
+.responsive-table {
+  width: 100%;
+  overflow-x: auto;
+  display: block;
+}
+
+@media (min-width: 1024px) {
+  .responsive-table {
+    display: table;
+    overflow-x: initial;
+  }
+}
+
+/* Simplified card grid system for mobile-first design */
+.card-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .card-grid.cols-sm-2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 768px) {
+  .card-grid.cols-md-2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .card-grid.cols-md-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .card-grid.cols-lg-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  
+  .card-grid.cols-lg-4 {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* Container width constraints */
+.container-fluid {
+  width: 100%;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.container {
+  width: 100%;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (min-width: 640px) {
+  .container {
+    max-width: 640px;
+  }
+}
+
+@media (min-width: 768px) {
+  .container {
+    max-width: 768px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .container {
+    max-width: 1024px;
+  }
+}
+
+@media (min-width: 1280px) {
+  .container {
+    max-width: 1280px;
+  }
+}
+
+/* Order customization for responsive layouts */
+.order-first {
+  order: -1;
+}
+
+.order-last {
+  order: 999;
+}
+
+@media (min-width: 768px) {
+  .order-md-first {
+    order: -1;
+  }
+  
+  .order-md-last {
+    order: 999;
+  }
+  
+  .order-md-reset {
+    order: 0;
+  }
+}
+
+/* Mobile navigation utilities */
+.mobile-menu-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 50;
+  display: none;
+}
+
+.mobile-menu-container.open {
+  display: block;
+}
+
+.mobile-menu {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: -280px; /* Start off-screen */
+  width: 280px;
+  background-color: white;
+  transition: left 0.3s ease;
+  z-index: 51;
+  overflow-y: auto;
+}
+
+.mobile-menu.open {
+  left: 0;
+}
+
+@media (min-width: 1024px) {
+  .mobile-menu-container {
+    display: none !important;
+  }
+} 
