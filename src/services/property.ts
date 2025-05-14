@@ -1,5 +1,12 @@
-import { supabase } from '../lib/supabase';
-import { Database } from '../types/supabase';
+import { supabase } from '@/lib/supabase';
+import { Database } from '@/types/supabase';
+import { 
+  createPropertySchema, 
+  updatePropertySchema, 
+  propertySearchSchema,
+  addressSchema 
+} from '@/types/property-schema';
+import { z } from 'zod';
 
 type Property = Database['public']['Tables']['properties']['Row'];
 type PropertyInsert = Database['public']['Tables']['properties']['Insert'];
@@ -9,6 +16,17 @@ export interface PropertyResult<T = unknown> {
   success: boolean;
   error: string | null;
   data: T | null;
+  validationErrors?: z.ZodIssue[];
+  pagination?: PaginationMetadata;
+}
+
+export interface PaginationMetadata {
+  currentPage: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrevious: boolean;
 }
 
 export interface Address {
@@ -32,6 +50,15 @@ export interface ValidationResult {
  */
 export async function getProperty(id: string): Promise<PropertyResult<Property>> {
   try {
+    // Validate id format
+    if (!id || typeof id !== 'string') {
+      return {
+        success: false,
+        error: 'Invalid property ID',
+        data: null,
+      };
+    }
+
     const { data, error } = await supabase
       .from('properties')
       .select('*')
@@ -56,22 +83,71 @@ export async function getProperty(id: string): Promise<PropertyResult<Property>>
 }
 
 /**
- * Get properties for the current user
+ * Get properties for the current user with pagination support
  */
-export async function getUserProperties(userId: string): Promise<PropertyResult<Property[]>> {
+export async function getUserProperties(
+  userId: string,
+  page: number = 1,
+  pageSize: number = 10,
+  sortBy: string = 'created_at',
+  sortOrder: 'asc' | 'desc' = 'desc'
+): Promise<PropertyResult<Property[]>> {
   try {
+    // Validate userId format
+    if (!userId || typeof userId !== 'string') {
+      return {
+        success: false,
+        error: 'Invalid user ID',
+        data: null,
+      };
+    }
+
+    // Validate pagination parameters
+    if (page < 1) page = 1;
+    if (pageSize < 1) pageSize = 10;
+    if (pageSize > 100) pageSize = 100; // Limit max page size
+
+    // Calculate range values for pagination
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
+
+    // Get total count for pagination metadata
+    const countQuery = await supabase
+      .from('properties')
+      .select('id', { count: 'exact', head: true })
+      .eq('owner_id', userId);
+
+    if (countQuery.error) throw countQuery.error;
+    
+    const totalCount = countQuery.count || 0;
+    
+    // Get paginated data
     const { data, error } = await supabase
       .from('properties')
       .select('*')
       .eq('owner_id', userId)
-      .order('created_at', { ascending: false });
+      .order(sortBy, { ascending: sortOrder === 'asc' })
+      .range(from, to);
 
     if (error) throw error;
+
+    // Calculate pagination metadata
+    const totalPages = Math.ceil(totalCount / pageSize);
+    
+    const paginationMetadata: PaginationMetadata = {
+      currentPage: page,
+      pageSize,
+      totalCount,
+      totalPages,
+      hasNext: page < totalPages,
+      hasPrevious: page > 1
+    };
 
     return {
       success: true,
       error: null,
       data,
+      pagination: paginationMetadata
     };
   } catch (error) {
     const err = error as Error;
@@ -88,6 +164,19 @@ export async function getUserProperties(userId: string): Promise<PropertyResult<
  */
 export async function createProperty(property: PropertyInsert): Promise<PropertyResult<Property>> {
   try {
+    // Validate input using Zod schema
+    const validationResult = createPropertySchema.safeParse(property);
+    
+    if (!validationResult.success) {
+      return {
+        success: false,
+        error: 'Validation failed',
+        data: null,
+        validationErrors: validationResult.error.issues,
+      };
+    }
+    
+    // Proceed with creation if validation passes
     const { data, error } = await supabase
       .from('properties')
       .insert([property])
@@ -119,6 +208,28 @@ export async function updateProperty(
   updates: PropertyUpdate
 ): Promise<PropertyResult<Property>> {
   try {
+    // Validate id format
+    if (!id || typeof id !== 'string') {
+      return {
+        success: false,
+        error: 'Invalid property ID',
+        data: null,
+      };
+    }
+    
+    // Validate updates using Zod schema
+    const validationResult = updatePropertySchema.safeParse(updates);
+    
+    if (!validationResult.success) {
+      return {
+        success: false,
+        error: 'Validation failed',
+        data: null,
+        validationErrors: validationResult.error.issues,
+      };
+    }
+    
+    // Proceed with update if validation passes
     const { data, error } = await supabase
       .from('properties')
       .update(updates)
@@ -171,26 +282,74 @@ export async function deleteProperty(id: string): Promise<PropertyResult<null>> 
 }
 
 /**
- * Search properties by address
+ * Search properties by address with pagination support
  */
 export async function searchProperties(
   searchTerm: string,
-  userId: string
+  userId: string,
+  page: number = 1,
+  pageSize: number = 10
 ): Promise<PropertyResult<Property[]>> {
   try {
+    // Validate input using Zod schema
+    const validationResult = propertySearchSchema.safeParse({ searchTerm, userId });
+    
+    if (!validationResult.success) {
+      return {
+        success: false,
+        error: 'Validation failed',
+        data: null,
+        validationErrors: validationResult.error.issues,
+      };
+    }
+
+    // Validate pagination parameters
+    if (page < 1) page = 1;
+    if (pageSize < 1) pageSize = 10;
+    if (pageSize > 100) pageSize = 100; // Limit max page size
+
+    // Calculate range values for pagination
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
+
+    // Get total count for pagination metadata
+    const countQuery = await supabase
+      .from('properties')
+      .select('id', { count: 'exact', head: true })
+      .eq('owner_id', userId)
+      .or(`address.ilike.%${searchTerm}%,suburb.ilike.%${searchTerm}%,city.ilike.%${searchTerm}%`);
+
+    if (countQuery.error) throw countQuery.error;
+    
+    const totalCount = countQuery.count || 0;
+
     const { data, error } = await supabase
       .from('properties')
       .select('*')
       .eq('owner_id', userId)
       .or(`address.ilike.%${searchTerm}%,suburb.ilike.%${searchTerm}%,city.ilike.%${searchTerm}%`)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .range(from, to);
 
     if (error) throw error;
+
+    // Calculate pagination metadata
+    const totalPages = Math.ceil(totalCount / pageSize);
+    
+    const paginationMetadata: PaginationMetadata = {
+      currentPage: page,
+      pageSize,
+      totalCount,
+      totalPages,
+      hasNext: page < totalPages,
+      hasPrevious: page > 1
+    };
 
     return {
       success: true,
       error: null,
       data,
+      pagination: paginationMetadata
     };
   } catch (error) {
     const err = error as Error;
@@ -244,47 +403,27 @@ export async function uploadPropertyImage(
  * In a real-world scenario, this would connect to an external address verification API.
  */
 export function validateAddress(address: Address): ValidationResult {
-  const errors: { field: string; message: string }[] = [];
-
-  // Validate address line
-  if (!address.address || address.address.trim().length < 3) {
-    errors.push({
-      field: 'address',
-      message: 'Address must be at least 3 characters long',
-    });
+  // Validate using Zod schema
+  const validationResult = addressSchema.safeParse(address);
+  
+  if (!validationResult.success) {
+    // Convert Zod validation errors to our error format
+    const errors = validationResult.error.issues.map(issue => ({
+      field: issue.path.join('.'),
+      message: issue.message,
+    }));
+    
+    return {
+      isValid: false,
+      errors,
+    };
   }
-
-  // Validate suburb
-  if (!address.suburb || address.suburb.trim().length < 2) {
-    errors.push({
-      field: 'suburb',
-      message: 'Suburb must be at least 2 characters long',
-    });
-  }
-
-  // Validate city
-  if (!address.city || address.city.trim().length < 2) {
-    errors.push({
-      field: 'city',
-      message: 'City must be at least 2 characters long',
-    });
-  }
-
-  // Validate postcode (if provided)
-  if (address.postcode && !/^\d{4}$/.test(address.postcode)) {
-    errors.push({
-      field: 'postcode',
-      message: 'Postcode must be a 4-digit number',
-    });
-  }
-
-  // Normalize address if valid
-  const normalizedAddress = errors.length === 0 ? normalizeAddress(address) : undefined;
-
+  
+  // If valid, return normalized address
   return {
-    isValid: errors.length === 0,
-    errors,
-    normalizedAddress,
+    isValid: true,
+    errors: [],
+    normalizedAddress: normalizeAddress(address),
   };
 }
 
