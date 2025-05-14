@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { registerSchema } from '@/lib/zodSchemas';
 import { signUpWithEmail } from '@/services/auth';
@@ -74,6 +75,20 @@ const RegisterForm: React.FC = () => {
     }
   };
 
+  const renderPasswordRequirements = () => {
+    return (
+      <div className="mt-2 space-y-1 text-xs text-muted-foreground">
+        <p>Password must:</p>
+        <ul className="list-disc pl-4 space-y-1">
+          <li>Be at least 8 characters long</li>
+          <li>Contain at least one uppercase letter</li>
+          <li>Contain at least one lowercase letter</li>
+          <li>Contain at least one number</li>
+        </ul>
+      </div>
+    );
+  };
+
   return (
     <Card className="w-full max-w-md mx-auto">
       <CardHeader>
@@ -84,11 +99,13 @@ const RegisterForm: React.FC = () => {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {error && (
             <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
           {success && (
-            <Alert>
+            <Alert className="bg-green-50 border-green-200 text-green-800">
+              <CheckCircle2 className="h-4 w-4 text-green-500" />
               <AlertDescription>{success}</AlertDescription>
             </Alert>
           )}
@@ -100,9 +117,13 @@ const RegisterForm: React.FC = () => {
               autoComplete="name"
               disabled={isLoading}
               {...register('fullName')}
+              className={errors.fullName ? "border-destructive" : ""}
             />
             {errors.fullName && (
-              <p className="text-sm text-red-500">{errors.fullName.message}</p>
+              <p className="text-sm text-destructive flex items-center gap-1 mt-1">
+                <AlertCircle className="h-3 w-3" />
+                {errors.fullName.message}
+              </p>
             )}
           </div>
           <div className="space-y-2">
@@ -113,9 +134,13 @@ const RegisterForm: React.FC = () => {
               autoComplete="email"
               disabled={isLoading}
               {...register('email')}
+              className={errors.email ? "border-destructive" : ""}
             />
             {errors.email && (
-              <p className="text-sm text-red-500">{errors.email.message}</p>
+              <p className="text-sm text-destructive flex items-center gap-1 mt-1">
+                <AlertCircle className="h-3 w-3" />
+                {errors.email.message}
+              </p>
             )}
           </div>
           <div className="space-y-2">
@@ -125,7 +150,7 @@ const RegisterForm: React.FC = () => {
               defaultValue="customer"
               disabled={isLoading}
             >
-              <SelectTrigger>
+              <SelectTrigger className={errors.role ? "border-destructive" : ""}>
                 <SelectValue placeholder="Select your role" />
               </SelectTrigger>
               <SelectContent>
@@ -134,7 +159,10 @@ const RegisterForm: React.FC = () => {
               </SelectContent>
             </Select>
             {errors.role && (
-              <p className="text-sm text-red-500">{errors.role.message}</p>
+              <p className="text-sm text-destructive flex items-center gap-1 mt-1">
+                <AlertCircle className="h-3 w-3" />
+                {errors.role.message}
+              </p>
             )}
           </div>
           <div className="space-y-2">
@@ -145,9 +173,14 @@ const RegisterForm: React.FC = () => {
               autoComplete="new-password"
               disabled={isLoading}
               {...register('password')}
+              className={errors.password ? "border-destructive" : ""}
             />
+            {renderPasswordRequirements()}
             {errors.password && (
-              <p className="text-sm text-red-500">{errors.password.message}</p>
+              <p className="text-sm text-destructive flex items-center gap-1 mt-1">
+                <AlertCircle className="h-3 w-3" />
+                {errors.password.message}
+              </p>
             )}
           </div>
           <div className="space-y-2">
@@ -158,9 +191,13 @@ const RegisterForm: React.FC = () => {
               autoComplete="new-password"
               disabled={isLoading}
               {...register('confirmPassword')}
+              className={errors.confirmPassword ? "border-destructive" : ""}
             />
             {errors.confirmPassword && (
-              <p className="text-sm text-red-500">{errors.confirmPassword.message}</p>
+              <p className="text-sm text-destructive flex items-center gap-1 mt-1">
+                <AlertCircle className="h-3 w-3" />
+                {errors.confirmPassword.message}
+              </p>
             )}
           </div>
           <Button type="submit" className="w-full" disabled={isLoading || !!success}>
@@ -169,7 +206,7 @@ const RegisterForm: React.FC = () => {
         </form>
       </CardContent>
       <CardFooter>
-        <p className="text-center text-sm text-gray-600 w-full">
+        <p className="text-center text-sm text-muted-foreground w-full">
           Already have an account?{' '}
           <Button
             variant="link"

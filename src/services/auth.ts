@@ -12,12 +12,18 @@ export interface AuthResult<T = unknown> {
  */
 export async function signInWithEmail(
   email: string,
-  password: string
+  password: string,
+  rememberMe: boolean = false
 ): Promise<AuthResult<SupabaseAuthResponse['data']>> {
   try {
     const response = await supabase.auth.signInWithPassword({
       email,
       password,
+      options: {
+        // Set session duration based on rememberMe preference
+        // By default, sessions last for a short period, but we can extend it if rememberMe is true
+        expiresIn: rememberMe ? 60 * 60 * 24 * 30 : undefined, // 30 days if remember me, otherwise default
+      }
     });
 
     if (response.error) throw response.error;

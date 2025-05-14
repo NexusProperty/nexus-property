@@ -29,6 +29,9 @@ import NewPropertyPage from "./pages/dashboard/properties/new";
 import PropertyDetailPage from "./pages/dashboard/properties/[id]/index";
 import EditPropertyPage from "./pages/dashboard/properties/edit/[id]";
 
+// UI Components
+import UIComponentsPage from "./pages/dashboard/ui-components";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -69,6 +72,9 @@ const App = () => (
                 
                 {/* Common routes */}
                 <Route path="/dashboard/settings" element={<div>Settings</div>} />
+                
+                {/* UI Components Demo */}
+                <Route path="/dashboard/ui-components" element={<UIComponentsPage />} />
               </Route>
             </Route>
             

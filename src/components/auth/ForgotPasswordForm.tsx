@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle, CheckCircle2, ArrowLeft } from 'lucide-react';
 import { resetPasswordSchema } from '@/lib/zodSchemas';
 import { resetPassword } from '@/services/auth';
 
@@ -43,7 +44,7 @@ const ForgotPasswordForm: React.FC = () => {
         throw new Error(result.error || 'Failed to send password reset email');
       }
 
-      setSuccess('Check your email for a password reset link.');
+      setSuccess(`Password reset instructions have been sent to ${data.email}. Please check your inbox and follow the instructions to reset your password.`);
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -61,11 +62,13 @@ const ForgotPasswordForm: React.FC = () => {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {error && (
             <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
           {success && (
-            <Alert>
+            <Alert className="bg-green-50 border-green-200 text-green-800">
+              <CheckCircle2 className="h-4 w-4 text-green-500" />
               <AlertDescription>{success}</AlertDescription>
             </Alert>
           )}
@@ -77,9 +80,13 @@ const ForgotPasswordForm: React.FC = () => {
               autoComplete="email"
               disabled={isLoading || !!success}
               {...register('email')}
+              className={errors.email ? "border-destructive" : ""}
             />
             {errors.email && (
-              <p className="text-sm text-red-500">{errors.email.message}</p>
+              <p className="text-sm text-destructive flex items-center gap-1 mt-1">
+                <AlertCircle className="h-3 w-3" />
+                {errors.email.message}
+              </p>
             )}
           </div>
           <Button type="submit" className="w-full" disabled={isLoading || !!success}>
@@ -88,13 +95,13 @@ const ForgotPasswordForm: React.FC = () => {
         </form>
       </CardContent>
       <CardFooter>
-        <p className="text-center text-sm text-gray-600 w-full">
+        <p className="text-center text-sm text-muted-foreground w-full">
           <Button
             variant="link"
-            className="px-0 font-normal"
+            className="px-0 font-normal flex items-center gap-1"
             onClick={() => navigate('/login')}
           >
-            Back to sign in
+            <ArrowLeft className="h-4 w-4" /> Back to sign in
           </Button>
         </p>
       </CardFooter>

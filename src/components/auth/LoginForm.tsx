@@ -8,6 +8,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Checkbox } from '@/components/ui/checkbox';
+import { AlertCircle } from 'lucide-react';
 import { loginSchema } from '@/lib/zodSchemas';
 import { signInWithEmail } from '@/services/auth';
 
@@ -23,20 +25,25 @@ const LoginForm: React.FC = () => {
     register,
     handleSubmit,
     formState: { errors },
+    watch,
+    setValue,
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
       email: '',
       password: '',
+      rememberMe: false,
     },
   });
+
+  const rememberMe = watch('rememberMe');
 
   const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const result = await signInWithEmail(data.email, data.password);
+      const result = await signInWithEmail(data.email, data.password, data.rememberMe);
 
       if (!result.success) {
         throw new Error(result.error || 'Failed to sign in');
@@ -60,6 +67,7 @@ const LoginForm: React.FC = () => {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           {error && (
             <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
@@ -71,9 +79,13 @@ const LoginForm: React.FC = () => {
               autoComplete="email"
               disabled={isLoading}
               {...register('email')}
+              className={errors.email ? "border-destructive" : ""}
             />
             {errors.email && (
-              <p className="text-sm text-red-500">{errors.email.message}</p>
+              <p className="text-sm text-destructive flex items-center gap-1 mt-1">
+                <AlertCircle className="h-3 w-3" />
+                {errors.email.message}
+              </p>
             )}
           </div>
           <div className="space-y-2">
@@ -94,10 +106,29 @@ const LoginForm: React.FC = () => {
               autoComplete="current-password"
               disabled={isLoading}
               {...register('password')}
+              className={errors.password ? "border-destructive" : ""}
             />
             {errors.password && (
-              <p className="text-sm text-red-500">{errors.password.message}</p>
+              <p className="text-sm text-destructive flex items-center gap-1 mt-1">
+                <AlertCircle className="h-3 w-3" />
+                {errors.password.message}
+              </p>
             )}
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox 
+              id="rememberMe" 
+              checked={rememberMe}
+              onCheckedChange={(checked) => {
+                setValue('rememberMe', checked === true);
+              }}
+            />
+            <Label
+              htmlFor="rememberMe"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+            >
+              Remember me for 30 days
+            </Label>
           </div>
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? 'Signing in...' : 'Sign In'}
@@ -105,7 +136,7 @@ const LoginForm: React.FC = () => {
         </form>
       </CardContent>
       <CardFooter>
-        <p className="text-center text-sm text-gray-600 w-full">
+        <p className="text-center text-sm text-muted-foreground w-full">
           Don't have an account?{' '}
           <Button
             variant="link"
