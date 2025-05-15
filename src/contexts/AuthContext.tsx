@@ -120,8 +120,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     
     if (success) {
       // Get updated session and user data
-      const currentSession = await getSession();
-      await handleAuthChange(currentSession);
+      const sessionResult = await getSession();
+      if (sessionResult.success && sessionResult.data) {
+        await handleAuthChange(sessionResult.data);
+      }
     }
     
     return success;
@@ -137,8 +139,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Initialize the session handler
         await initializeSessionHandler();
         
-        const currentSession = await getSession();
-        await handleAuthChange(currentSession);
+        const sessionResult = await getSession();
+        if (sessionResult.success && sessionResult.data) {
+          await handleAuthChange(sessionResult.data);
+        }
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
         console.error('Error initializing auth:', errorMessage);

@@ -1,5 +1,6 @@
 import { vi } from 'vitest';
 import { afterAll, afterEach, beforeAll } from 'vitest';
+import '@testing-library/jest-dom';
 
 // Setup global mocks and configurations
 beforeAll(() => {

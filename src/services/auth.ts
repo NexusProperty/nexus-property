@@ -1,58 +1,146 @@
-import { AuthError, Session, UserResponse, User, AuthResponse as SupabaseAuthResponse } from '@supabase/supabase-js';
+import { AuthError, Session, User, AuthResponse as SupabaseAuthResponse } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
 import { loginSchema, registerSchema, resetPasswordSchema, updatePasswordSchema } from '@/lib/zodSchemas';
 import { z } from 'zod';
 import { refreshCsrfToken } from '@/lib/csrf';
 
-export interface AuthResult<T = unknown> {
+/**
+ * Result type for auth operations
+ */
+export type AuthResult<T = unknown> = {
   success: boolean;
-  error: string | null;
   data: T | null;
+  error: Error | string | null;
   validationErrors?: z.ZodIssue[];
-}
+};
+
+/**
+ * Simple auth result type for testing
+ */
+export type SimpleAuthResult<T = unknown> = {
+  success: boolean;
+  data: T | null;
+  error: Error | null;
+};
 
 /**
  * Sign in with email and password
  */
-export async function signInWithEmail(
-  email: string,
-  password: string,
-  rememberMe: boolean = false
-): Promise<AuthResult<SupabaseAuthResponse['data']>> {
+export async function signIn(email: string, password: string): Promise<AuthResult> {
   try {
-    // Validate input using Zod schema
-    const validationResult = loginSchema.safeParse({ email, password, rememberMe });
-    
-    if (!validationResult.success) {
-      return {
-        success: false,
-        error: 'Validation failed',
-        data: null,
-        validationErrors: validationResult.error.issues,
-      };
-    }
-    
-    // Proceed with sign in if validation passes
-    const response = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
-      // Options are not needed for signInWithPassword
-      // The session duration is managed by Supabase Auth settings
     });
 
-    if (response.error) throw response.error;
+    if (error) {
+      return {
+        success: false,
+        data: null,
+        error: new Error(error.message),
+      };
+    }
 
     return {
       success: true,
+      data,
       error: null,
-      data: response.data,
     };
   } catch (error) {
-    const authError = error as AuthError;
     return {
       success: false,
-      error: authError.message,
       data: null,
+      error: error instanceof Error ? error : new Error(String(error)),
+    };
+  }
+}
+
+/**
+ * Register a new user
+ */
+export async function signUp(email: string, password: string): Promise<AuthResult> {
+  try {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+
+    if (error) {
+      return {
+        success: false,
+        data: null,
+        error: new Error(error.message),
+      };
+    }
+
+    return {
+      success: true,
+      data,
+      error: null,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      data: null,
+      error: error instanceof Error ? error : new Error(String(error)),
+    };
+  }
+}
+
+/**
+ * Sign out the current user
+ */
+export async function signOut(): Promise<AuthResult> {
+  try {
+    const { error } = await supabase.auth.signOut();
+
+    if (error) {
+      return {
+        success: false,
+        data: null,
+        error: new Error(error.message),
+      };
+    }
+
+    return {
+      success: true,
+      data: null,
+      error: null,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      data: null,
+      error: error instanceof Error ? error : new Error(String(error)),
+    };
+  }
+}
+
+/**
+ * Get the current session
+ */
+export async function getSession(): Promise<AuthResult<Session>> {
+  try {
+    const { data, error } = await supabase.auth.getSession();
+
+    if (error) {
+      return {
+        success: false,
+        data: null,
+        error: new Error(error.message),
+      };
+    }
+
+    return {
+      success: true,
+      data: data.session,
+      error: null,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      data: null,
+      error: error instanceof Error ? error : new Error(String(error)),
     };
   }
 }
@@ -109,30 +197,6 @@ export async function signUpWithEmail(
       success: true,
       error: null,
       data: response.data,
-    };
-  } catch (error) {
-    const authError = error as AuthError;
-    return {
-      success: false,
-      error: authError.message,
-      data: null,
-    };
-  }
-}
-
-/**
- * Sign out the current user
- */
-export async function signOut(): Promise<AuthResult<null>> {
-  try {
-    const { error } = await supabase.auth.signOut();
-
-    if (error) throw error;
-
-    return {
-      success: true,
-      error: null,
-      data: null,
     };
   } catch (error) {
     const authError = error as AuthError;
@@ -243,14 +307,6 @@ export async function updatePassword(
       data: null,
     };
   }
-}
-
-/**
- * Get the current session
- */
-export async function getSession(): Promise<Session | null> {
-  const { data } = await supabase.auth.getSession();
-  return data.session;
 }
 
 /**
