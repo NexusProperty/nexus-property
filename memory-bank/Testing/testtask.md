@@ -63,17 +63,22 @@ Based on the current implementation status and complexity, the following areas s
   - [x] Test Login form
   - [x] Test Registration form
   - [x] Test Password reset workflow
-  - [ ] Test Protected routes
+  - [x] Test Protected routes
 
 - [ ] **Core UI Component Tests**
-  - [ ] Test AppraisalList component
+  - [x] Test AppraisalList component
   - [ ] Test AppraisalDetail component
   - [ ] Test PropertyDetail component
   - [ ] Test ReportGenerationButton
 
 - [ ] **Service/Utility Tests**
   - [x] Test auth service
-  - [ ] Test property services
+  - [x] Test property services
+    - [x] Test `getProperty` function
+    - [x] Test `getUserProperties` function
+    - [x] Test `createProperty` function
+    - [x] Test `updateProperty` function
+    - [x] Test `deleteProperty` function
   - [ ] Test appraisal services
   - [ ] Test utility functions
   - [ ] Test data transformation logic
@@ -84,7 +89,7 @@ Based on the current implementation status and complexity, the following areas s
   - [x] Test authentication flows
   - [x] Create Supabase test mocks
   - [ ] Test database queries
-  - [ ] Test RLS policies
+  - [x] Test RLS policies
 
 - [ ] **Edge Function Integration Tests**
   - [ ] Test property-data function
@@ -101,8 +106,8 @@ Based on the current implementation status and complexity, the following areas s
 
 - [x] **E2E Test Setup**
   - [x] Create basic home page tests
-  - [ ] Set up authentication test helpers
-  - [ ] Configure test data management
+  - [x] Set up authentication test helpers
+  - [x] Configure test data management
 
 - [ ] **User Role Flows**
   - [ ] Test Agent portal critical paths
@@ -171,6 +176,9 @@ The following tools have been implemented for the testing infrastructure:
 - Fixed integration tests by adapting test expectations to match actual implementation behavior
 - Created a robust pattern for handling auth service tests that can be reused for other services
 - Documentation has been added to help future developers understand the testing approach
+- Implemented ProtectedRoute component tests for various authentication and authorization scenarios
+- Created property service tests with proper Supabase mocking approach
+- Used function spies for testing property service to avoid complex Supabase mocking issues
 
 ## Progress Update
 
@@ -187,17 +195,38 @@ The following tools have been implemented for the testing infrastructure:
   - Form submission tests
   - Error handling tests
   - Navigation link tests
-
-### In Progress Tasks
 - [x] Implement Registration Form component tests
 - [x] Implement Password Reset Form component tests
-- [ ] Create additional service tests
+- [x] Implement Protected Route component tests
+- [x] Implement Property Service tests
+  - getProperty function
+  - getUserProperties function
+  - createProperty function
+  - updateProperty function
+  - deleteProperty function
+- [x] Implement E2E authentication tests with Playwright
+  - Login form validation tests
+  - Registration form validation tests
+  - Navigation between auth pages
+  - Route protection tests
+- [x] Create database testing for RLS policies
+  - Properties table RLS tests
+  - Property access RLS tests
+- [x] Implement Core UI component tests
+  - AppraisalList component tests
+    - Rendering tests
+    - Search functionality tests
+    - Filter and sort tests
+    - Error handling tests
+    - Realtime update tests
+
+### In Progress Tasks
+- [ ] Implement additional Core UI component tests
 
 ### Next Steps
-- [ ] Set up E2E testing with Playwright
-- [ ] Implement initial E2E tests for critical flows
-- [ ] Create database testing for RLS policies
-- [ ] Set up CI/CD integration for tests
+- [ ] Implement test for PropertyDetail component
+- [ ] Implement test for AppraisalDetail component
+- [ ] Continue with User Role E2E flows
 
 ## Authentication Tests
 
@@ -216,4 +245,21 @@ The following tools have been implemented for the testing infrastructure:
   - Implement tests for form validation
   - Test form submission
   - Test error handling
-  - Test navigation links 
+  - Test navigation links
+- [x] **Test Protected Routes Component**
+  - Test loading state
+  - Test unauthenticated redirect
+  - Test authenticated access
+  - Test role-based access control
+
+## Property Service Tests
+- [x] **Test getProperty Function**
+  - Test successful property retrieval
+  - Test error handling for invalid IDs
+  - Test database error handling
+- [x] **Test getUserProperties Function**
+  - Test successful property retrieval with pagination
+  - Test custom pagination parameters
+  - Test custom sorting parameters
+  - Test error handling for invalid user IDs
+  - Test database error handling 
