@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  # Frontend application
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    environment:
+      - NODE_ENV=production
+    networks:
+      - app-network
+    depends_on:
+      - api-proxy
+
+  # API proxy to handle CORS and route to Supabase
+  api-proxy:
+    image: nginx:alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./nginx/api-proxy.conf:/etc/nginx/conf.d/default.conf
+    networks:
+      - app-network
+
+  # Playwright for end-to-end tests
+  e2e-tests:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    depends_on:
+      - frontend
+    volumes:
+      - ./test-results:/app/test-results
+      - ./playwright-report:/app/playwright-report
+    environment:
+      - BASE_URL=http://frontend
+    command: npx playwright test
+    networks:
+      - app-network
+      
+networks:
+  app-network:
+    driver: bridge 
