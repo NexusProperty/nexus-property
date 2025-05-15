@@ -123,107 +123,220 @@ const createMockQuery = (tableName: string) => {
   };
 };
 
-// Create a mock Supabase client
-export const createMockSupabaseClient = () => {
+/**
+ * Creates a mock Supabase client for testing
+ * This can be used to mock the Supabase client in tests
+ */
+export function createMockSupabaseClient() {
   return {
     auth: {
-      getSession: vi.fn().mockResolvedValue({ 
-        data: { 
-          session: { 
-            user: { 
-              id: 'test-user-id-1', 
-              email: 'test@example.com',
-              user_metadata: { role: 'agent' }
-            },
-            access_token: 'mock-access-token',
-            refresh_token: 'mock-refresh-token',
-            expires_in: 3600,
-            token_type: 'bearer'
-          } 
-        }, 
-        error: null 
+      getSession: vi.fn().mockResolvedValue({
+        data: { session: null },
+        error: null,
+      }),
+      getUser: vi.fn().mockResolvedValue({
+        data: { user: null },
+        error: null,
       }),
       signInWithPassword: vi.fn().mockResolvedValue({
-        data: { user: mockData.users[0], session: { access_token: 'mock-token' } },
-        error: null
+        data: { user: null, session: null },
+        error: null,
       }),
       signUp: vi.fn().mockResolvedValue({
-        data: { user: { ...mockData.users[0], id: 'new-user-id' }, session: { access_token: 'mock-token' } },
-        error: null
+        data: { user: null, session: null },
+        error: null,
       }),
-      signOut: vi.fn().mockResolvedValue({ error: null }),
-      refreshSession: vi.fn().mockResolvedValue({
-        data: {
-          session: {
-            user: { 
-              id: 'test-user-id-1', 
-              email: 'test@example.com',
-              user_metadata: { role: 'agent' }
-            },
-            access_token: 'mock-fresh-access-token',
-            refresh_token: 'mock-fresh-refresh-token',
-            expires_in: 3600,
-            token_type: 'bearer'
-          }
-        },
-        error: null
-      }),
-      updateUser: vi.fn().mockResolvedValue({
-        data: { user: mockData.users[0] },
-        error: null
+      signOut: vi.fn().mockResolvedValue({
+        error: null,
       }),
       resetPasswordForEmail: vi.fn().mockResolvedValue({
-        data: {},
-        error: null
+        error: null,
+      }),
+      updateUser: vi.fn().mockResolvedValue({
+        data: { user: null },
+        error: null,
+      }),
+      onAuthStateChange: vi.fn().mockReturnValue({
+        data: {
+          subscription: {
+            unsubscribe: vi.fn(),
+          },
+        },
+      }),
+      refreshSession: vi.fn().mockResolvedValue({
+        data: { session: null },
+        error: null,
       }),
     },
-    from: vi.fn((tableName) => createMockQuery(tableName)),
-    functions: {
-      invoke: vi.fn().mockImplementation((functionName, { body } = { body: {} }) => {
-        // Mock different function responses
-        if (functionName === 'property-data') {
-          return Promise.resolve({
-            data: { 
-              property: mockData.properties[0],
-              comparables: mockData.properties.slice(1),
-              success: true
-            },
-            error: null
-          });
-        } else if (functionName === 'property-valuation') {
-          return Promise.resolve({
-            data: {
-              valuationLow: 750000,
-              valuationHigh: 850000,
-              valuationConfidence: 85,
-              success: true
-            },
-            error: null
-          });
-        } else if (functionName === 'ai-market-analysis') {
-          return Promise.resolve({
-            data: {
-              marketTrends: 'Property prices are increasing by 5% annually in this area.',
-              localFeatures: 'Close to schools, parks, and shopping centers.',
-              success: true
-            },
-            error: null
-          });
-        }
-        
-        return Promise.resolve({ data: null, error: { message: 'Function not implemented in test' } });
+    from: vi.fn().mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        eq: vi.fn().mockResolvedValue({
+          data: [],
+          error: null,
+        }),
+        match: vi.fn().mockResolvedValue({
+          data: [],
+          error: null,
+        }),
+        in: vi.fn().mockResolvedValue({
+          data: [],
+          error: null,
+        }),
+        contains: vi.fn().mockResolvedValue({
+          data: [],
+          error: null,
+        }),
+        range: vi.fn().mockResolvedValue({
+          data: [],
+          error: null,
+        }),
+        limit: vi.fn().mockReturnThis(),
+        order: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({
+          data: null,
+          error: null,
+        }),
       }),
-    },
+      insert: vi.fn().mockResolvedValue({
+        data: { id: 'mock-id' },
+        error: null,
+      }),
+      update: vi.fn().mockReturnValue({
+        eq: vi.fn().mockResolvedValue({
+          data: { id: 'mock-id' },
+          error: null,
+        }),
+        match: vi.fn().mockResolvedValue({
+          data: { id: 'mock-id' },
+          error: null,
+        }),
+      }),
+      delete: vi.fn().mockReturnValue({
+        eq: vi.fn().mockResolvedValue({
+          data: [],
+          error: null,
+        }),
+        match: vi.fn().mockResolvedValue({
+          data: [],
+          error: null,
+        }),
+      }),
+    }),
     storage: {
       from: vi.fn().mockReturnValue({
-        upload: vi.fn().mockResolvedValue({ data: { path: 'test-file-path' }, error: null }),
-        getPublicUrl: vi.fn().mockReturnValue({ data: { publicUrl: 'https://example.com/test-file.jpg' } }),
-        list: vi.fn().mockResolvedValue({ data: [{ name: 'test-file.jpg' }], error: null }),
-        remove: vi.fn().mockResolvedValue({ data: {}, error: null }),
+        upload: vi.fn().mockResolvedValue({
+          data: { path: 'mock-path' },
+          error: null,
+        }),
+        download: vi.fn().mockResolvedValue({
+          data: new Blob(),
+          error: null,
+        }),
+        getPublicUrl: vi.fn().mockReturnValue({
+          data: { publicUrl: 'https://example.com/mock-file' },
+        }),
+        remove: vi.fn().mockResolvedValue({
+          data: { path: 'mock-path' },
+          error: null,
+        }),
+      }),
+    },
+    functions: {
+      invoke: vi.fn().mockResolvedValue({
+        data: null,
+        error: null,
+      }),
+    },
+    channel: vi.fn().mockReturnValue({
+      on: vi.fn().mockReturnThis(),
+      subscribe: vi.fn().mockResolvedValue({
+        unsubscribe: vi.fn(),
+      }),
+    }),
+  };
+}
+
+/**
+ * Creates a mock session for testing
+ */
+export function createMockSession(overrides = {}) {
+  return {
+    access_token: 'mock-access-token',
+    refresh_token: 'mock-refresh-token',
+    expires_in: 3600,
+    expires_at: Date.now() + 3600 * 1000,
+    token_type: 'bearer',
+    user: createMockUser(),
+    ...overrides,
+  };
+}
+
+/**
+ * Creates a mock user for testing
+ */
+export function createMockUser(overrides = {}) {
+  return {
+    id: 'mock-user-id',
+    email: 'test@example.com',
+    app_metadata: { provider: 'email' },
+    user_metadata: { 
+      full_name: 'Test User', 
+      role: 'agent' 
+    },
+    aud: 'authenticated',
+    created_at: new Date().toISOString(),
+    ...overrides,
+  };
+}
+
+/**
+ * Sets up authentication mocks for tests
+ * This provides a more convenient way to mock authentication for tests
+ */
+export function setupAuthMocks({
+  isAuthenticated = false,
+  userRole = 'agent',
+  userId = 'mock-user-id',
+  email = 'test@example.com',
+  fullName = 'Test User',
+} = {}) {
+  const mockUser = isAuthenticated
+    ? createMockUser({ 
+        id: userId, 
+        email, 
+        user_metadata: { 
+          full_name: fullName, 
+          role: userRole 
+        } 
+      })
+    : null;
+    
+  const mockSession = isAuthenticated
+    ? createMockSession({ user: mockUser })
+    : null;
+  
+  const supabase = {
+    auth: {
+      getSession: vi.fn().mockResolvedValue({
+        data: { session: mockSession },
+        error: null,
+      }),
+      getUser: vi.fn().mockResolvedValue({
+        data: { user: mockUser },
+        error: null,
+      }),
+      signInWithPassword: vi.fn().mockResolvedValue({
+        data: isAuthenticated ? { user: mockUser, session: mockSession } : null,
+        error: isAuthenticated ? null : { message: 'Invalid login credentials' },
+      }),
+      signOut: vi.fn().mockResolvedValue({
+        error: null,
       }),
     },
   };
-};
+  
+  return { supabase, mockUser, mockSession };
+}
 
 // Utility to mock Edge Function responses
 export const mockEdgeFunction = (

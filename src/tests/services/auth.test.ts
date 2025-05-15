@@ -2,25 +2,27 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as authService from '@/services/auth';
 import { supabase } from '@/lib/supabase';
 
-// Create a mock for the Supabase client
-vi.mock('@/lib/supabase', () => ({
-  supabase: {
-    auth: {
-      signInWithPassword: vi.fn(),
-      signUp: vi.fn(),
-      signOut: vi.fn(),
-      getSession: vi.fn(),
-      resetPasswordForEmail: vi.fn(),
-      updateUser: vi.fn(),
-      getUser: vi.fn(),
-      refreshSession: vi.fn(),
+// Mock the entire supabase module
+vi.mock('@/lib/supabase', () => {
+  return {
+    supabase: {
+      auth: {
+        signInWithPassword: vi.fn(),
+        signUp: vi.fn(),
+        signOut: vi.fn(),
+        getSession: vi.fn(),
+        resetPasswordForEmail: vi.fn(),
+        updateUser: vi.fn(),
+        getUser: vi.fn(),
+        refreshSession: vi.fn(),
+      },
     },
-  },
-}));
+  };
+});
 
 // Mock for CSRF token refresh
 vi.mock('@/lib/csrf', () => ({
-  refreshCsrfToken: vi.fn().mockResolvedValue(undefined),
+  refreshCsrfToken: vi.fn(() => Promise.resolve()),
 }));
 
 describe('Authentication Service', () => {
@@ -30,11 +32,20 @@ describe('Authentication Service', () => {
   
   describe('signIn', () => {
     it('should call Supabase signInWithPassword with correct parameters', async () => {
-      // Set up the mock to return a successful response
-      vi.mocked(supabase.auth.signInWithPassword).mockResolvedValue({
-        data: { user: { id: 'test-user-id' }, session: { access_token: 'test-token' } },
+      // Set up the mock using type assertion
+      const mockAuthResponse = {
+        data: { 
+          user: { id: 'test-user-id' }, 
+          session: { access_token: 'test-token' } 
+        },
         error: null,
-      } as any);
+      };
+      
+      // Disable eslint for test mocks only
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      vi.mocked(supabase.auth.signInWithPassword).mockImplementation(() => 
+        Promise.resolve(mockAuthResponse) as any
+      );
       
       const email = 'test@example.com';
       const password = 'password123';
@@ -50,11 +61,16 @@ describe('Authentication Service', () => {
     });
     
     it('should handle sign in failure', async () => {
-      // Set up the mock to return an error
-      vi.mocked(supabase.auth.signInWithPassword).mockResolvedValue({
+      // Set up the mock using type assertion
+      const mockAuthResponse = {
         data: { user: null, session: null },
         error: { message: 'Invalid login credentials' },
-      } as any);
+      };
+      
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      vi.mocked(supabase.auth.signInWithPassword).mockImplementation(() => 
+        Promise.resolve(mockAuthResponse) as any
+      );
       
       const result = await authService.signIn('wrong@example.com', 'wrongpassword');
       
@@ -66,10 +82,14 @@ describe('Authentication Service', () => {
   
   describe('signOut', () => {
     it('should call Supabase signOut and return success', async () => {
-      // Set up the mock to return a successful response
-      vi.mocked(supabase.auth.signOut).mockResolvedValue({
+      const mockResponse = {
         error: null,
-      } as any);
+      };
+      
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      vi.mocked(supabase.auth.signOut).mockImplementation(() => 
+        Promise.resolve(mockResponse) as any
+      );
       
       const result = await authService.signOut();
       
@@ -79,10 +99,14 @@ describe('Authentication Service', () => {
     });
     
     it('should handle sign out failure', async () => {
-      // Set up the mock to return an error
-      vi.mocked(supabase.auth.signOut).mockResolvedValue({
+      const mockResponse = {
         error: { message: 'Failed to sign out' },
-      } as any);
+      };
+      
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      vi.mocked(supabase.auth.signOut).mockImplementation(() => 
+        Promise.resolve(mockResponse) as any
+      );
       
       const result = await authService.signOut();
       
@@ -93,11 +117,15 @@ describe('Authentication Service', () => {
 
   describe('getSession', () => {
     it('should call Supabase getSession and return session data', async () => {
-      // Set up the mock to return a successful response
-      vi.mocked(supabase.auth.getSession).mockResolvedValue({
+      const mockResponse = {
         data: { session: { user: { id: 'test-user-id' } } },
         error: null,
-      } as any);
+      };
+      
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      vi.mocked(supabase.auth.getSession).mockImplementation(() => 
+        Promise.resolve(mockResponse) as any
+      );
       
       const result = await authService.getSession();
       
@@ -108,11 +136,15 @@ describe('Authentication Service', () => {
     });
     
     it('should handle failure to get session', async () => {
-      // Set up the mock to return an error
-      vi.mocked(supabase.auth.getSession).mockResolvedValue({
+      const mockResponse = {
         data: { session: null },
         error: { message: 'Failed to get session' },
-      } as any);
+      };
+      
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      vi.mocked(supabase.auth.getSession).mockImplementation(() => 
+        Promise.resolve(mockResponse) as any
+      );
       
       const result = await authService.getSession();
       
@@ -124,11 +156,15 @@ describe('Authentication Service', () => {
   
   describe('refreshSession', () => {
     it('should call Supabase refreshSession and return updated session', async () => {
-      // Set up the mock to return a successful response
-      vi.mocked(supabase.auth.refreshSession).mockResolvedValue({
+      const mockResponse = {
         data: { session: { user: { id: 'test-user-id' } } },
         error: null,
-      } as any);
+      };
+      
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      vi.mocked(supabase.auth.refreshSession).mockImplementation(() => 
+        Promise.resolve(mockResponse) as any
+      );
       
       const result = await authService.refreshSession();
       
@@ -139,11 +175,15 @@ describe('Authentication Service', () => {
     });
     
     it('should handle failure to refresh session', async () => {
-      // Set up the mock to return an error
-      vi.mocked(supabase.auth.refreshSession).mockResolvedValue({
+      const mockResponse = {
         data: { session: null },
         error: { message: 'Failed to refresh session' },
-      } as any);
+      };
+      
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      vi.mocked(supabase.auth.refreshSession).mockImplementation(() => 
+        Promise.resolve(mockResponse) as any
+      );
       
       const result = await authService.refreshSession();
       

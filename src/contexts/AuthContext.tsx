@@ -171,14 +171,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     };
   }, [handleAuthChange]);
 
+  // Handle user activity to track inactivity
+  const handleUserActivity = useCallback(() => {
+    // Reset the inactivity timer
+    lastActivityTimestamp.current = Date.now();
+  }, []);
+
   // Handle user inactivity
   useEffect(() => {
-    // Function to handle user activity
-    const handleUserActivity = () => {
-      // Reset the inactivity timer
-      lastActivityTimestamp.current = Date.now();
-    };
-    
     // Set up activity listeners
     window.addEventListener('mousedown', handleUserActivity);
     window.addEventListener('keydown', handleUserActivity);
@@ -203,7 +203,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       window.removeEventListener('scroll', handleUserActivity);
       clearInterval(inactivityCheckInterval);
     };
-  }, [session, refreshAuthToken]);
+  }, [session, refreshAuthToken, handleUserActivity]);
 
   // Memoize the context value to prevent unnecessary re-renders
   const value = useMemo(() => ({
