@@ -112,10 +112,10 @@ Based on the current implementation status and complexity, the following areas s
   - [x] Test RLS policies
 
 - [ ] **Edge Function Integration Tests**
-  - [ ] Test property-data function
-  - [x] Test property-valuation function
-  - [x] Test ai-market-analysis function
-  - [x] Test report-generation function
+  - [x] Test property-data function
+  - [x] Implemented tests for property-valuation function
+  - [x] Implemented tests for ai-market-analysis function
+  - [x] Implemented tests for report-generation function
 
 - [ ] **Third-Party API Integration Tests**
   - [ ] Test CoreLogic NZ integration
