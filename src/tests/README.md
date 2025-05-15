@@ -151,7 +151,7 @@ test('user can log in', async ({ page }) => {
 });
 ```
 
-## Mocking Supabase
+## Mock Supabase
 
 We provide utilities to mock Supabase in `utils/supabase-test-utils.ts`:
 
@@ -166,6 +166,69 @@ vi.mock('@/lib/supabase', () => ({
 ```
 
 The mock includes methods for auth, database queries, storage, and edge functions.
+
+## Database Testing
+
+### Mock Database Tests
+
+For most database tests, we use mock implementations of the Supabase client. This approach is faster and doesn't require an actual database connection. Examples can be found in:
+- `integration/database-queries.test.ts`
+
+### Isolated Database Tests
+
+For comprehensive database testing, we also have tests that connect to an actual Supabase instance. These tests are skipped by default to avoid requiring a Supabase setup for regular test runs.
+
+To run isolated database tests:
+
+```bash
+# Run with npm
+npm test -- -t "Isolated Database Tests" --no-skip
+
+# Run with Vitest directly
+npx vitest -t "Isolated Database Tests" --no-skip
+```
+
+#### Configuration
+
+Isolated database tests use the configuration in `integration/database-test-config.ts`. You'll need to set the following environment variables:
+
+```
+TEST_SUPABASE_URL=https://your-test-project.supabase.co
+TEST_SUPABASE_ANON_KEY=your-test-anon-key
+TEST_SUPABASE_SERVICE_ROLE_KEY=your-test-service-role-key
+TEST_USER_EMAIL=test@example.com
+TEST_USER_PASSWORD=secure-test-password
+```
+
+For local development, you can use the local Supabase instance running on `http://localhost:54321`.
+
+#### Test Utilities
+
+The database test configuration provides several utilities:
+
+- `createTestDbClient()`: Creates a Supabase client for the test database
+- `createTestAdminClient()`: Creates a service role client for admin operations
+- `createTestUser()`: Creates a test user in the auth system
+- `cleanupTestData()`: Removes test data after tests
+- `withTestDatabase()`: Helper function that sets up and tears down a test environment
+
+Example usage:
+
+```typescript
+import { withTestDatabase } from './database-test-config';
+
+it('should test database operations', async () => {
+  await withTestDatabase(async (supabase, user) => {
+    // Run your test with a real database connection
+    const { data, error } = await supabase
+      .from('your_table')
+      .select('*');
+      
+    expect(error).toBeNull();
+    expect(data).toBeDefined();
+  });
+});
+```
 
 ## Test Context Providers
 
