@@ -6,6 +6,17 @@ import '@testing-library/jest-dom';
 beforeAll(() => {
   // Add any global test setup here
   console.log('Setting up test environment');
+  
+  // Mock ResizeObserver with a proper class implementation
+  class MockResizeObserver {
+    constructor(callback: ResizeObserverCallback) {}
+    observe = vi.fn();
+    unobserve = vi.fn();
+    disconnect = vi.fn();
+  }
+  
+  // Assign the mock to global
+  global.ResizeObserver = MockResizeObserver as unknown as typeof ResizeObserver;
 });
 
 // Clean up after all tests

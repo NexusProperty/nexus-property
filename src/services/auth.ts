@@ -56,6 +56,47 @@ export async function signIn(email: string, password: string): Promise<AuthResul
 }
 
 /**
+ * Sign in with email and password with remember me option
+ */
+export async function signInWithEmail(email: string, password: string, rememberMe: boolean): Promise<AuthResult> {
+  try {
+    // Standard sign in first
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      return {
+        success: false,
+        data: null,
+        error: new Error(error.message),
+      };
+    }
+
+    // If rememberMe is true and sign-in was successful, set a longer session
+    if (rememberMe && data.session) {
+      // Store the preference in local storage or handle in the UI
+      localStorage.setItem('rememberMe', 'true');
+    } else {
+      localStorage.removeItem('rememberMe');
+    }
+
+    return {
+      success: true,
+      data,
+      error: null,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      data: null,
+      error: error instanceof Error ? error : new Error(String(error)),
+    };
+  }
+}
+
+/**
  * Register a new user
  */
 export async function signUp(email: string, password: string): Promise<AuthResult> {

@@ -106,6 +106,7 @@ const ResetPasswordForm: React.FC = () => {
               disabled={isLoading || !!success}
               {...register('password')}
               className={errors.password ? "border-destructive" : ""}
+              data-testid="password-input"
             />
             {renderPasswordRequirements()}
             {errors.password && (
@@ -124,6 +125,7 @@ const ResetPasswordForm: React.FC = () => {
               disabled={isLoading || !!success}
               {...register('confirmPassword')}
               className={errors.confirmPassword ? "border-destructive" : ""}
+              data-testid="confirm-password-input"
             />
             {errors.confirmPassword && (
               <p className="text-sm text-destructive flex items-center gap-1 mt-1">
