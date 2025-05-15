@@ -6,6 +6,13 @@ export default defineConfig({
     environment: 'node',
     globals: true,
     setupFiles: ['./src/tests/setup.ts'],
+    alias: {
+      '@': path.resolve(__dirname, './src'),
+    },
+    typecheck: {
+      tsconfig: './tsconfig.test.json',
+      include: ['src/tests/**/*.ts'],
+    },
   },
   resolve: {
     alias: {
