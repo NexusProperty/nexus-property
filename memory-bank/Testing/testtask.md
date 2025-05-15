@@ -65,11 +65,11 @@ Based on the current implementation status and complexity, the following areas s
   - [x] Test Password reset workflow
   - [x] Test Protected routes
 
-- [ ] **Core UI Component Tests**
+- [x] **Core UI Component Tests**
   - [x] Test AppraisalList component
-  - [ ] Test AppraisalDetail component
-  - [ ] Test PropertyDetail component
-  - [ ] Test ReportGenerationButton
+  - [x] Test AppraisalDetail component
+  - [x] Test PropertyDetail component
+  - [x] Test ReportGenerationButton
 
 - [ ] **Service/Utility Tests**
   - [x] Test auth service
@@ -80,6 +80,7 @@ Based on the current implementation status and complexity, the following areas s
     - [x] Test `updateProperty` function
     - [x] Test `deleteProperty` function
   - [ ] Test appraisal services
+  - [x] Test report generation hook
   - [ ] Test utility functions
   - [ ] Test data transformation logic
 
@@ -109,15 +110,15 @@ Based on the current implementation status and complexity, the following areas s
   - [x] Set up authentication test helpers
   - [x] Configure test data management
 
-- [ ] **User Role Flows**
-  - [ ] Test Agent portal critical paths
-  - [ ] Test Customer portal critical paths
-  - [ ] Test Admin portal critical paths
+- [x] **User Role Flows**
+  - [x] Test Agent portal critical paths
+  - [x] Test Customer portal critical paths
+  - [x] Test Admin portal critical paths
 
-- [ ] **Complete Business Processes**
-  - [ ] Test end-to-end appraisal creation process
-  - [ ] Test property management workflow
-  - [ ] Test report generation and delivery
+- [x] **Complete Business Processes**
+  - [x] Test end-to-end appraisal creation process
+  - [x] Test property management workflow
+  - [x] Test report generation and delivery
 
 ### 5. Security Testing
 
@@ -219,14 +220,61 @@ The following tools have been implemented for the testing infrastructure:
     - Filter and sort tests
     - Error handling tests
     - Realtime update tests
+- [x] Implement E2E property management workflow tests
+  - Property list display and search tests
+  - Property creation flow
+  - Property viewing and navigation
+  - Property editing
+  - Property deletion
+- [x] Implement PropertyDetail component tests
+  - Rendering tests
+  - Navigation
+  - Property details display
+  - Edit functionality
+  - Delete functionality
+  - Error handling tests
+  - Permission tests
+- [x] Implement AppraisalDetail component tests
+  - Loading state tests
+  - Error state tests
+  - Successful rendering tests
+  - Comparable properties display tests
+  - Delete functionality tests
+  - Property data fetching tests
+  - Valuation request tests
+  - Report generation tests
+  - Realtime update tests
+- [x] Implement ReportGenerationButton component tests
+  - Default state rendering tests
+  - Loading state tests
+  - Click handler tests
+  - Custom props tests
+  - Proper hook integration tests
+- [x] Implement useReportGeneration hook tests
+  - Initialization tests
+  - Report generation tests
+  - URL fetching tests
+  - Error handling tests
+  - Concurrent generation prevention tests
+- [x] Implement User Role E2E Tests
+  - Agent portal critical paths tests
+  - Customer portal critical paths tests
+  - Admin portal critical paths tests
+- [x] Implement E2E appraisal creation process tests
+  - Complete appraisal wizard flow tests
+  - Form validation tests
+  - Draft saving tests
+- [x] Implement E2E report generation and delivery tests
+  - Report generation from appraisal detail tests
+  - Report sharing tests
+  - Report download tests
 
 ### In Progress Tasks
-- [ ] Implement additional Core UI component tests
+- [ ] Implement additional Service/Utility tests
 
 ### Next Steps
-- [ ] Implement test for PropertyDetail component
-- [ ] Implement test for AppraisalDetail component
-- [ ] Continue with User Role E2E flows
+- [ ] Implement Appraisal Service tests
+- [ ] Implement Security testing
 
 ## Authentication Tests
 
