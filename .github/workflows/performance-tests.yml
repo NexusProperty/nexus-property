@@ -1,0 +1,78 @@
+name: Performance Testing
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  # Allow manual triggering of the workflow
+  workflow_dispatch:
+
+jobs:
+  performance-tests:
+    name: Performance Tests
+    runs-on: ubuntu-latest
+    
+    env:
+      VITE_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      VITE_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+      
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Build project
+        run: npm run build
+      
+      - name: Run API performance tests
+        run: npm run test:performance:api
+
+      - name: Run UI rendering performance tests
+        run: npm run test:performance:ui
+        
+      - name: Upload performance test results
+        uses: actions/upload-artifact@v3
+        with:
+          name: performance-test-results
+          path: |
+            performance-results/
+            reports/
+
+  track-performance-metrics:
+    name: Track Performance Metrics
+    needs: performance-tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Download performance test results
+        uses: actions/download-artifact@v3
+        with:
+          name: performance-test-results
+          
+      - name: Process performance results
+        run: |
+          echo "Processing performance results..."
+          # Parse the performance results files and compare against historical data
+          # This would typically involve a custom script
+          
+      - name: Check for performance regressions
+        run: |
+          echo "Checking for performance regressions..."
+          # Compare results with baseline metrics
+          # Exit with non-zero if significant regression detected
+          
+      - name: Update performance metrics dashboard
+        if: success()
+        run: |
+          echo "Updating performance metrics dashboard..."
+          # Push data to metrics tracking service
+          # (like Grafana, Datadog, etc.) 
