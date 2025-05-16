@@ -16,54 +16,19 @@ vi.mock('@/lib/supabase', () => ({
 }));
 
 // Test data
-const TEST_VALUATION_REQUEST = {
+const TEST_REPORT_REQUEST = {
   appraisalId: 'test-appraisal-id',
-  propertyDetails: {
-    address: '123 Test Street',
-    suburb: 'Test Suburb',
-    city: 'Auckland',
-    propertyType: 'house',
-    bedrooms: 3,
-    bathrooms: 2,
-    landSize: 650,
-    floorArea: 180,
-    yearBuilt: 2005
-  },
-  comparableProperties: [
-    {
-      id: 'comp-1',
-      address: '125 Test Street',
-      suburb: 'Test Suburb',
-      city: 'Auckland',
-      propertyType: 'house',
-      bedrooms: 3,
-      bathrooms: 2,
-      landSize: 600,
-      floorArea: 175,
-      yearBuilt: 2003,
-      saleDate: '2023-10-15',
-      salePrice: 950000,
-      similarityScore: 92
-    },
-    {
-      id: 'comp-2',
-      address: '130 Test Street',
-      suburb: 'Test Suburb',
-      city: 'Auckland',
-      propertyType: 'house',
-      bedrooms: 4,
-      bathrooms: 2,
-      landSize: 700,
-      floorArea: 190,
-      yearBuilt: 2010,
-      saleDate: '2023-09-20',
-      salePrice: 1050000,
-      similarityScore: 85
-    }
-  ],
-  requestOptions: {
-    includeMarketTrends: true,
-    includeValuationFactors: true
+  includeComparables: true,
+  includeMarketAnalysis: true,
+  includeValuationFactors: true,
+  customizations: {
+    logoUrl: 'https://example.com/logo.png',
+    primaryColor: '#2563EB',
+    secondaryColor: '#E5E7EB',
+    companyName: 'Test Realty',
+    agentName: 'Jane Agent',
+    agentPhone: '555-1234',
+    agentEmail: 'jane@testrealty.com'
   }
 };
 
@@ -71,57 +36,26 @@ const TEST_VALUATION_REQUEST = {
 const MOCK_SUCCESSFUL_RESPONSE = {
   success: true,
   data: {
-    valuationLow: 850000,
-    valuationHigh: 950000,
-    valuationConfidence: 85,
-    adjustedComparables: [
-      {
-        id: 'comp-1',
-        originalPrice: 950000,
-        adjustedPrice: 960000,
-        adjustmentFactor: 1.01,
-        adjustmentReasons: [
-          { factor: 'Size', impact: '+1%' },
-          { factor: 'Age', impact: '0%' }
-        ]
-      },
-      {
-        id: 'comp-2',
-        originalPrice: 1050000,
-        adjustedPrice: 1020000,
-        adjustmentFactor: 0.97,
-        adjustmentReasons: [
-          { factor: 'Bedrooms', impact: '-2%' },
-          { factor: 'Land Size', impact: '-1%' }
-        ]
-      }
-    ],
-    valuationFactors: {
-      location: { impact: 'high', description: 'Premium location with good schools and amenities' },
-      propertyCondition: { impact: 'medium', description: 'Well-maintained property with modern features' },
-      marketTrends: { impact: 'medium', description: 'Stable market with moderate growth' }
-    },
-    marketTrends: {
-      medianPrice: 920000,
-      pricePerSqm: 5100,
-      annualGrowth: 4.5,
-      salesVolume: 42,
-      daysOnMarket: 32
-    }
+    reportUrl: 'https://example.com/reports/test-report-id.pdf',
+    reportId: 'test-report-id',
+    generatedAt: '2023-05-15T10:30:45.123Z',
+    expiresAt: '2023-06-15T10:30:45.123Z',
+    sections: ['property-details', 'valuation', 'comparables', 'market-analysis'],
+    pages: 8
   }
 };
 
 const MOCK_ERROR_RESPONSE = {
   success: false,
-  error: 'Failed to generate property valuation'
+  error: 'Failed to generate report'
 };
 
 const MOCK_VALIDATION_ERROR_RESPONSE = {
   success: false,
-  error: 'Invalid appraisal ID or missing property details'
+  error: 'Invalid appraisal ID or missing required parameters'
 };
 
-describe('Property Valuation Edge Function Integration', () => {
+describe('Generate Report Edge Function Integration', () => {
   // Before each test, reset mocks
   beforeEach(() => {
     vi.resetAllMocks();
@@ -132,7 +66,7 @@ describe('Property Valuation Edge Function Integration', () => {
     vi.restoreAllMocks();
   });
 
-  it('should successfully generate property valuation when all inputs are valid', async () => {
+  it('should successfully generate a report when all inputs are valid', async () => {
     // Mock authentication
     vi.mocked(supabase.auth.getSession).mockResolvedValue({
       data: {
@@ -154,28 +88,27 @@ describe('Property Valuation Edge Function Integration', () => {
     });
 
     // Call the Edge Function
-    const { data, error } = await supabase.functions.invoke('property-valuation', {
-      body: TEST_VALUATION_REQUEST
+    const { data, error } = await supabase.functions.invoke('generate-report', {
+      body: TEST_REPORT_REQUEST
     });
 
     // Verify the function was called with the correct parameters
-    expect(supabase.functions.invoke).toHaveBeenCalledWith('property-valuation', {
-      body: TEST_VALUATION_REQUEST
+    expect(supabase.functions.invoke).toHaveBeenCalledWith('generate-report', {
+      body: TEST_REPORT_REQUEST
     });
 
     // Verify the response
     expect(error).toBeNull();
     expect(data).toEqual(MOCK_SUCCESSFUL_RESPONSE);
     expect(data?.success).toBe(true);
-    expect(data?.data?.valuationLow).toBe(850000);
-    expect(data?.data?.valuationHigh).toBe(950000);
-    expect(data?.data?.valuationConfidence).toBe(85);
-    expect(data?.data?.adjustedComparables.length).toBe(2);
-    expect(data?.data?.valuationFactors).toBeDefined();
-    expect(data?.data?.marketTrends).toBeDefined();
+    expect(data?.data?.reportUrl).toBeDefined();
+    expect(data?.data?.reportId).toBeDefined();
+    expect(data?.data?.generatedAt).toBeDefined();
+    expect(data?.data?.sections).toBeInstanceOf(Array);
+    expect(data?.data?.pages).toBeDefined();
   });
 
-  it('should handle validation errors for invalid inputs', async () => {
+  it('should handle validation errors for invalid appraisal ID', async () => {
     // Mock authentication
     vi.mocked(supabase.auth.getSession).mockResolvedValue({
       data: {
@@ -196,21 +129,16 @@ describe('Property Valuation Edge Function Integration', () => {
       error: null
     });
 
-    // Call the Edge Function with missing property details
-    const { data, error } = await supabase.functions.invoke('property-valuation', {
-      body: { appraisalId: 'test-appraisal-id' } // Missing propertyDetails
-    });
-
-    // Verify the function was called with the correct parameters
-    expect(supabase.functions.invoke).toHaveBeenCalledWith('property-valuation', {
-      body: { appraisalId: 'test-appraisal-id' }
+    // Call the Edge Function with invalid appraisal ID
+    const { data, error } = await supabase.functions.invoke('generate-report', {
+      body: { ...TEST_REPORT_REQUEST, appraisalId: 'invalid-id' }
     });
 
     // Verify the response
     expect(error).toBeNull();
     expect(data).toEqual(MOCK_VALIDATION_ERROR_RESPONSE);
     expect(data?.success).toBe(false);
-    expect(data?.error).toContain('Invalid appraisal ID or missing property details');
+    expect(data?.error).toContain('Invalid appraisal ID');
   });
 
   it('should handle authentication failures', async () => {
@@ -227,8 +155,8 @@ describe('Property Valuation Edge Function Integration', () => {
     });
 
     // Call the Edge Function
-    const { data, error } = await supabase.functions.invoke('property-valuation', {
-      body: TEST_VALUATION_REQUEST
+    const { data, error } = await supabase.functions.invoke('generate-report', {
+      body: TEST_REPORT_REQUEST
     });
 
     // Verify the response
@@ -238,7 +166,7 @@ describe('Property Valuation Edge Function Integration', () => {
     expect(error?.status).toBe(401);
   });
 
-  it('should handle insufficient comparable properties', async () => {
+  it('should handle appraisals with incomplete valuation data', async () => {
     // Mock authentication
     vi.mocked(supabase.auth.getSession).mockResolvedValue({
       data: {
@@ -253,33 +181,28 @@ describe('Property Valuation Edge Function Integration', () => {
       error: null
     });
 
-    // Mock error response for insufficient comparables
+    // Mock error response for incomplete valuation
     vi.mocked(supabase.functions.invoke).mockResolvedValue({
       data: {
         success: false,
-        error: 'Insufficient comparable properties for accurate valuation. Minimum 3 required.'
+        error: 'Cannot generate report: Appraisal does not have complete valuation data.'
       },
       error: null
     });
 
-    // Call the Edge Function with insufficient comparables
-    const requestWithInsufficientComps = {
-      ...TEST_VALUATION_REQUEST,
-      comparableProperties: [TEST_VALUATION_REQUEST.comparableProperties[0]] // Only one comparable
-    };
-
-    const { data, error } = await supabase.functions.invoke('property-valuation', {
-      body: requestWithInsufficientComps
+    // Call the Edge Function
+    const { data, error } = await supabase.functions.invoke('generate-report', {
+      body: TEST_REPORT_REQUEST
     });
 
     // Verify the response
     expect(error).toBeNull();
     expect(data?.success).toBe(false);
-    expect(data?.error).toContain('Insufficient comparable properties');
+    expect(data?.error).toContain('does not have complete valuation data');
   });
 
   it('should handle ownership verification', async () => {
-    // Mock authentication as a different user
+    // Mock authentication with different user
     vi.mocked(supabase.auth.getSession).mockResolvedValue({
       data: {
         session: {
@@ -296,15 +219,15 @@ describe('Property Valuation Edge Function Integration', () => {
       error: null
     });
 
-    // Mock ownership error response
+    // Mock access error response
     vi.mocked(supabase.functions.invoke).mockResolvedValue({
       data: null,
-      error: { message: 'Access denied. You do not have permission to value this appraisal.', status: 403 }
+      error: { message: 'Access denied. You do not have permission to generate reports for this appraisal.', status: 403 }
     });
 
     // Call the Edge Function
-    const { data, error } = await supabase.functions.invoke('property-valuation', {
-      body: TEST_VALUATION_REQUEST
+    const { data, error } = await supabase.functions.invoke('generate-report', {
+      body: TEST_REPORT_REQUEST
     });
 
     // Verify the response
@@ -314,7 +237,7 @@ describe('Property Valuation Edge Function Integration', () => {
     expect(error?.status).toBe(403);
   });
 
-  it('should handle appraisals with invalid status', async () => {
+  it('should handle PDF generation service errors', async () => {
     // Mock authentication
     vi.mocked(supabase.auth.getSession).mockResolvedValue({
       data: {
@@ -329,23 +252,58 @@ describe('Property Valuation Edge Function Integration', () => {
       error: null
     });
 
-    // Mock invalid status error response
+    // Mock PDF generation error
     vi.mocked(supabase.functions.invoke).mockResolvedValue({
       data: {
         success: false,
-        error: 'Appraisal is not in a valid status for valuation. Current status: completed'
+        error: 'PDF generation service error: Failed to render report template.'
       },
       error: null
     });
 
     // Call the Edge Function
-    const { data, error } = await supabase.functions.invoke('property-valuation', {
-      body: TEST_VALUATION_REQUEST
+    const { data, error } = await supabase.functions.invoke('generate-report', {
+      body: TEST_REPORT_REQUEST
     });
 
     // Verify the response
     expect(error).toBeNull();
     expect(data?.success).toBe(false);
-    expect(data?.error).toContain('Appraisal is not in a valid status');
+    expect(data?.error).toContain('PDF generation service error');
+  });
+
+  it('should handle storage service errors', async () => {
+    // Mock authentication
+    vi.mocked(supabase.auth.getSession).mockResolvedValue({
+      data: {
+        session: {
+          access_token: 'mock-token',
+          refresh_token: 'mock-refresh-token',
+          expires_in: 3600,
+          token_type: 'bearer',
+          user: createMockUser({ user_metadata: { role: 'agent' } })
+        }
+      },
+      error: null
+    });
+
+    // Mock storage error
+    vi.mocked(supabase.functions.invoke).mockResolvedValue({
+      data: {
+        success: false,
+        error: 'Storage service error: Failed to upload generated report.'
+      },
+      error: null
+    });
+
+    // Call the Edge Function
+    const { data, error } = await supabase.functions.invoke('generate-report', {
+      body: TEST_REPORT_REQUEST
+    });
+
+    // Verify the response
+    expect(error).toBeNull();
+    expect(data?.success).toBe(false);
+    expect(data?.error).toContain('Storage service error');
   });
 });
