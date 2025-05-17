@@ -64,4 +64,4 @@ If you encounter issues during migration:
 
 ## Database Schema Documentation
 
-For a complete description of the database schema, refer to the [Schema Documentation](../schema-documentation.md). 
+For a complete description of the database schema, refer to the [Schema Documentation](database/schema-documentation.md). 
