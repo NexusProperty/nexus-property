@@ -154,7 +154,7 @@ export function formatAddress(
   postcode?: string
 ): string {
   // Build address components
-  let addressParts: string[] = [];
+  const addressParts: string[] = [];
   
   // Street address
   if (streetNumber || streetName) {

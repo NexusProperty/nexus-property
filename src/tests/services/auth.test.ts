@@ -41,10 +41,8 @@ describe('Authentication Service', () => {
         error: null,
       };
       
-      // Disable eslint for test mocks only
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.mocked(supabase.auth.signInWithPassword).mockImplementation(() => 
-        Promise.resolve(mockAuthResponse) as any
+        Promise.resolve(mockAuthResponse)
       );
       
       const email = 'test@example.com';
@@ -67,9 +65,8 @@ describe('Authentication Service', () => {
         error: { message: 'Invalid login credentials' },
       };
       
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.mocked(supabase.auth.signInWithPassword).mockImplementation(() => 
-        Promise.resolve(mockAuthResponse) as any
+        Promise.resolve(mockAuthResponse)
       );
       
       const result = await authService.signIn('wrong@example.com', 'wrongpassword');
@@ -86,9 +83,8 @@ describe('Authentication Service', () => {
         error: null,
       };
       
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.mocked(supabase.auth.signOut).mockImplementation(() => 
-        Promise.resolve(mockResponse) as any
+        Promise.resolve(mockResponse)
       );
       
       const result = await authService.signOut();
@@ -103,9 +99,8 @@ describe('Authentication Service', () => {
         error: { message: 'Failed to sign out' },
       };
       
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.mocked(supabase.auth.signOut).mockImplementation(() => 
-        Promise.resolve(mockResponse) as any
+        Promise.resolve(mockResponse)
       );
       
       const result = await authService.signOut();
@@ -122,9 +117,8 @@ describe('Authentication Service', () => {
         error: null,
       };
       
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.mocked(supabase.auth.getSession).mockImplementation(() => 
-        Promise.resolve(mockResponse) as any
+        Promise.resolve(mockResponse)
       );
       
       const result = await authService.getSession();
@@ -141,9 +135,8 @@ describe('Authentication Service', () => {
         error: { message: 'Failed to get session' },
       };
       
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.mocked(supabase.auth.getSession).mockImplementation(() => 
-        Promise.resolve(mockResponse) as any
+        Promise.resolve(mockResponse)
       );
       
       const result = await authService.getSession();
@@ -161,9 +154,8 @@ describe('Authentication Service', () => {
         error: null,
       };
       
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.mocked(supabase.auth.refreshSession).mockImplementation(() => 
-        Promise.resolve(mockResponse) as any
+        Promise.resolve(mockResponse)
       );
       
       const result = await authService.refreshSession();
@@ -180,9 +172,8 @@ describe('Authentication Service', () => {
         error: { message: 'Failed to refresh session' },
       };
       
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       vi.mocked(supabase.auth.refreshSession).mockImplementation(() => 
-        Promise.resolve(mockResponse) as any
+        Promise.resolve(mockResponse)
       );
       
       const result = await authService.refreshSession();

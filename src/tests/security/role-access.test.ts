@@ -10,7 +10,7 @@ vi.mock('@/hooks/useAuth', () => ({
 
 // Mock protected route component
 vi.mock('@/components/ProtectedRoute', () => ({
-  default: ({ children, requiredRoles }: { children: React.ReactNode, requiredRoles?: string[] }) => (
+  default: ({ children, requiredRoles }: { children: React.ReactNode; requiredRoles?: string[] }) => (
     <div data-testid="protected-route" data-required-roles={requiredRoles?.join(',')}>
       {children}
     </div>

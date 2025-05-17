@@ -1,0 +1,67 @@
+import React from 'react';
+
+/**
+ * Default loading fallback component
+ */
+export const DefaultLoadingFallback: React.FC = () => (
+  <div className="flex justify-center items-center p-4 min-h-[100px]">
+    <div className="animate-pulse flex space-x-4">
+      <div className="rounded-full bg-gray-200 h-10 w-10"></div>
+      <div className="flex-1 space-y-2 py-1">
+        <div className="h-2 bg-gray-200 rounded w-3/4"></div>
+        <div className="h-2 bg-gray-200 rounded"></div>
+      </div>
+    </div>
+  </div>
+);
+
+/**
+ * Error boundary to catch errors in lazy loaded components
+ */
+export class ErrorBoundary extends React.Component<
+  { children: React.ReactNode; errorComponent?: React.ComponentType<{ error: Error }> },
+  { hasError: boolean; error?: Error }
+> {
+  constructor(props: { children: React.ReactNode; errorComponent?: React.ComponentType<{ error: Error }> }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('Error in lazy loaded component:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError && this.state.error) {
+      const ErrorComp = this.props.errorComponent || DefaultErrorComponent;
+      return <ErrorComp error={this.state.error} />;
+    }
+
+    return this.props.children;
+  }
+}
+
+/**
+ * Default error component
+ */
+const DefaultErrorComponent: React.FC<{ error: Error }> = ({ error }) => (
+  <div className="rounded-md bg-red-50 p-4 border border-red-200">
+    <div className="flex">
+      <div className="flex-shrink-0">
+        <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+        </svg>
+      </div>
+      <div className="ml-3">
+        <h3 className="text-sm font-medium text-red-800">Error loading component</h3>
+        <div className="mt-2 text-sm text-red-700">
+          {error.message || 'Something went wrong while loading this component.'}
+        </div>
+      </div>
+    </div>
+  </div>
+); 

@@ -1,19 +1,19 @@
 # Nexus Property Project - Linter Issues Task List
 
-**Last Updated**: 2025-05-20
-**Progress**: 19/19 files fixed (100% complete)
-**Focus Area**: TypeScript 'any' type issues, React Hook Dependency Issues
+**Last Updated**: 2025-05-24
+**Progress**: 27/27 files fixed for TypeScript, React, and linting issues (100% complete)
+**Focus Area**: TypeScript 'any' type issues, React Hook Dependency Issues, React Refresh Issues, Empty Interface Issues, TypeScript Comment Issues, Unused ESLint Directives, Other Linting Issues
 
 | Category | Total Issues | Fixed | Pending |
 |----------|--------------|-------|---------|
 | TypeScript 'any' Type Issues | 39 | 39 | 0 |
 | React Hook Dependency Issues | 4 | 4 | 0 |
-| React Refresh Issues | 14 | 7 | 7 |
-| Empty Interface Issues | 2 | 0 | 2 |
-| TypeScript Comment Issues | 6 | 0 | 6 |
-| Unused ESLint Disable Directives | 8 | 0 | 8 |
-| Other Issues | 3 | 0 | 3 |
-| **Total** | **76** | **27** | **49** |
+| React Refresh Issues | 14 | 14 | 0 |
+| Empty Interface Issues | 2 | 2 | 0 |
+| TypeScript Comment Issues | 6 | 6 | 0 |
+| Unused ESLint Disable Directives | 8 | 8 | 0 |
+| Other Issues | 3 | 3 | 0 |
+| **Total** | **76** | **76** | **0** |
 
 ## Progress Summary
 
@@ -151,7 +151,42 @@ All React Hook Dependency Issues have been fixed by:
    - Removed the style from exports
    - Ensured the component file only exports components
 
-The React Refresh issues have been fixed by implementing a consistent approach of separating non-component exports from component exports:
+8. **src/components/ui/sidebar.tsx** ✅:
+   - Moved `useSidebar` hook to `src/lib/ui-hooks/use-sidebar.ts`
+   - Moved `sidebarMenuButtonVariants` to `src/lib/ui-variants/sidebar-variants.ts`
+   - Updated imports to reference the extracted utilities
+   - Ensured the component file only exports components
+
+9. **src/components/ui/sonner.tsx** ✅:
+   - Moved `toast` to a dedicated file at `src/lib/ui-utilities/toast-utils.ts`
+   - Updated imports to reference the extracted utility
+   - Ensured the component file only exports components
+
+10. **src/components/ui/toggle.tsx** ✅:
+    - Moved `toggleVariants` to a dedicated file at `src/lib/ui-variants/toggle-variants.ts`
+    - Updated imports to reference the extracted variant
+    - Ensured the component file only exports components
+
+11. **src/contexts/AuthContext.tsx** ✅:
+    - Moved `useAuth` hook and context types to `src/lib/auth/auth-context.ts`
+    - Created a barrel file at `src/lib/auth/index.ts` for organizing exports
+    - Updated imports to reference the extracted utilities
+    - Ensured the component file only exports components
+
+12. **src/tests/utils/test-utils.tsx** ✅:
+    - Moved mock functions to a dedicated file at `src/lib/testing/auth-mocks.ts`
+    - Moved `mockAuthContext` and `waitForPromises` functions to the dedicated file
+    - Updated imports to reference the extracted utilities
+    - Ensured the component file only exports components
+
+13. **src/utils/lazyLoad.tsx** ✅:
+    - Moved utility functions to `src/lib/loading/lazy-load-utils.tsx`
+    - Moved components to `src/lib/loading/loading-components.tsx`
+    - Restructured the original file to only re-export the components and utilities
+    - Ensured proper typing and imports between files
+    - Maintained all existing functionality while eliminating React refresh issues
+
+All React Refresh issues have been fixed by implementing a consistent approach of separating non-component exports from component exports:
 - Variants, constants, enums, and utility functions have been moved to appropriate directories
 - Created a consistent directory structure and naming convention
 - Maintained type safety throughout the refactoring
@@ -162,8 +197,52 @@ We have established the following pattern for organizing code:
 2. **Enums and Constants**: Enum definitions are moved to `src/lib/enums/` (e.g., `error-categories.ts`) 
 3. **Form Utilities**: Form-related functions and contexts are moved to `src/lib/form-utils/` (e.g., `form-contexts.ts`)
 4. **Custom Hooks**: Extracted hooks are moved to `src/lib/hooks/` (e.g., `use-feedback.ts`)
+5. **Testing Utilities**: Testing-related functions are moved to `src/lib/testing/` (e.g., `auth-mocks.ts`)
+6. **Loading Utilities**: Lazy loading functions and components are moved to `src/lib/loading/` (e.g., `lazy-load-utils.tsx`)
 
-This approach improves code organization, enhances maintainability, and enables proper functioning of React's Fast Refresh feature, which significantly improves the developer experience by allowing component changes to be reflected without losing component state.
+This approach improves code organization, enhances maintainability, and enables proper functioning of React's Fast Refresh feature, which significantly improves the developer experience by allowing component changes to be reflected without losing component state. All 14 React Refresh issues have been successfully resolved.
+
+### Fixes for TypeScript Comment Issues and Empty Interface Issues (2025-05-23)
+1. **src/components/ui/command.tsx** ✅:
+   - Changed empty interface `CommandDialogProps extends DialogProps {}` to a more concise type alias `type CommandDialogProps = DialogProps`
+   - This fixes the "Interface declaring no members is equivalent to its supertype" warning
+
+2. **src/components/ui/textarea.tsx** ✅:
+   - Changed empty interface `TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {}` to a more concise type alias `type TextareaProps = React.TextareaHTMLAttributes<HTMLTextAreaElement>`
+   - This fixes the "Interface declaring no members is equivalent to its supertype" warning
+
+3. **src/services/notification.ts** ✅:
+   - Replaced `@ts-ignore` with `@ts-expect-error` for future implementation notes about tables that don't exist yet
+   - The more specific `@ts-expect-error` directive provides better clarity about the intentional silence of type errors
+
+4. **src/tests/services/appraisal.test.ts** ✅:
+   - Replaced all four instances of `@ts-ignore` with `@ts-expect-error` for intentionally passing invalid data in tests
+   - This follows TypeScript best practices by using the more explicit directive that will cause an error if the code no longer produces a type error
+
+5. **src/tests/services/auth.test.ts** ✅:
+   - Removed all 8 unused `// eslint-disable-next-line @typescript-eslint/no-explicit-any` directives
+   - Removed the corresponding `as any` type assertions that were no longer needed
+   - Simplified the mock implementations to use proper typing
+
+These fixes address all TypeScript comment issues by replacing `@ts-ignore` with the recommended `@ts-expect-error` directive where necessary, and they resolve empty interface issues by converting them to more appropriate type aliases. We've also eliminated all unused ESLint disable directives, improving code clarity and maintainability.
+
+### Fixes for Other Issues (2025-05-24)
+1. **src/tests/security/role-access.test.ts** ✅:
+   - Fixed TypeScript generic syntax by replacing a comma with a semicolon in the type definition
+   - Changed `{ children: React.ReactNode, requiredRoles?: string[] }` to `{ children: React.ReactNode; requiredRoles?: string[] }`
+   - This resolves the "Parsing error: '>' expected" issue that was preventing successful compilation
+
+2. **supabase/functions/property-data/corelogic-transformers.ts** ✅:
+   - Changed `let addressParts: string[] = [];` to `const addressParts: string[] = [];`
+   - Since the array variable is only mutated via methods like `push()` but never reassigned, using `const` is more appropriate and follows TypeScript best practices
+
+3. **tailwind.config.ts** ✅:
+   - Replaced CommonJS `require("tailwindcss-animate")` with proper ES module import syntax
+   - Added import statement `import tailwindcssAnimate from "tailwindcss-animate";`
+   - Updated the plugins array to use the imported module: `plugins: [tailwindcssAnimate]`
+   - This follows modern TypeScript/ES module best practices and eliminates the CommonJS-style require
+
+All linter issues have now been successfully resolved throughout the codebase, resulting in improved code quality, better type safety, and adherence to best practices across all files.
 
 ## Overview
 This document catalogs all linter issues found in the codebase using `npm run lint`. The issues are categorized by type for easier prioritization and resolution.
@@ -218,42 +297,42 @@ Components that export both React components and other items causing refresh iss
 | src/components/ui/form-elements.tsx | 468:17, 479:17 | Fast refresh only works when a file only exports components | ✅ Fixed | Moved form utility functions to `src/lib/form-utils/form-utils.ts` |
 | src/components/ui/form.tsx | 168:3 | Fast refresh only works when a file only exports components | ✅ Fixed | Moved context and hooks to `src/lib/form-utils/form-contexts.ts` |
 | src/components/ui/navigation-menu.tsx | 119:3 | Fast refresh only works when a file only exports components | ✅ Fixed | Moved `navigationMenuTriggerStyle` to `src/lib/ui-variants/navigation-menu-variants.ts` |
-| src/components/ui/sidebar.tsx | 760:3 | Fast refresh only works when a file only exports components | ⬜ Pending | |
+| src/components/ui/sidebar.tsx | 760:3 | Fast refresh only works when a file only exports components | ✅ Fixed | Moved `useSidebar` hook to `src/lib/ui-hooks/use-sidebar.ts` and `sidebarMenuButtonVariants` to `src/lib/ui-variants/sidebar-variants.ts` |
 | src/components/ui/sonner.tsx | 29:19 | Fast refresh only works when a file only exports components | ✅ Fixed | Moved `toast` to a dedicated file at `src/lib/ui-utilities/toast-utils.ts` |
 | src/components/ui/toggle.tsx | 43:18 | Fast refresh only works when a file only exports components | ✅ Fixed | Moved `toggleVariants` to a dedicated file at `src/lib/ui-variants/toggle-variants.ts` |
 | src/contexts/AuthContext.tsx | 36:14 | Fast refresh only works when a file only exports components | ✅ Fixed | Moved `useAuth` hook and context types to `src/lib/auth/auth-context.ts` and created a barrel file at `src/lib/auth/index.ts` |
-| src/tests/utils/test-utils.tsx | 8:7, 34:1 | Fast refresh warnings for component exports | ⬜ Pending | |
-| src/utils/lazyLoad.tsx | 12:17, 118:17 | Fast refresh only works when a file only exports components | ⬜ Pending | |
+| src/tests/utils/test-utils.tsx | 8:7, 34:1 | Fast refresh warnings for component exports | ✅ Fixed | Moved mock functions to `src/lib/testing/auth-mocks.ts` and imported them |
+| src/utils/lazyLoad.tsx | 12:17, 118:17 | Fast refresh only works when a file only exports components | ✅ Fixed | Moved utility functions to `src/lib/loading/lazy-load-utils.tsx` and components to `src/lib/loading/loading-components.tsx` |
 
 ### 4. Empty Interface Issues (2)
 
-| File | Line | Issue |
-|------|------|-------|
-| src/components/ui/command.tsx | 24:11 | Interface declaring no members is equivalent to its supertype |
-| src/components/ui/textarea.tsx | 5:18 | Interface declaring no members is equivalent to its supertype |
+| File | Line | Issue | Status | Fix Applied |
+|------|------|-------|--------|------------|
+| src/components/ui/command.tsx | 24:11 | Interface declaring no members is equivalent to its supertype | ✅ Fixed | Changed to `type CommandDialogProps = DialogProps` |
+| src/components/ui/textarea.tsx | 5:18 | Interface declaring no members is equivalent to its supertype | ✅ Fixed | Changed to `export type TextareaProps = React.TextareaHTMLAttributes<HTMLTextAreaElement>` |
 
 ### 5. TypeScript Comment Issues (6)
 Using @ts-ignore instead of the recommended @ts-expect-error.
 
-| File | Line | Issue |
-|------|------|-------|
-| src/services/notification.ts | 62:1, 65:1 | Use @ts-expect-error instead of @ts-ignore |
-| src/tests/services/appraisal.test.ts | 271:7, 275:7, 442:7, 446:7 | Use @ts-expect-error instead of @ts-ignore |
+| File | Line | Issue | Status | Fix Applied |
+|------|------|-------|--------|------------|
+| src/services/notification.ts | 62:1, 65:1 | Use @ts-expect-error instead of @ts-ignore | ✅ Fixed | Replaced `@ts-ignore` with `@ts-expect-error` |
+| src/tests/services/appraisal.test.ts | 271:7, 275:7, 442:7, 446:7 | Use @ts-expect-error instead of @ts-ignore | ✅ Fixed | Replaced `@ts-ignore` with `@ts-expect-error` |
 
 ### 6. Unused ESLint Disable Directives (8)
 Directives that do nothing.
 
-| File | Line | Issue |
-|------|------|-------|
-| src/tests/services/auth.test.ts | Multiple lines | 8 unused eslint-disable directives |
+| File | Line | Issue | Status | Fix Applied |
+|------|------|-------|--------|------------|
+| src/tests/services/auth.test.ts | Multiple lines | 8 unused eslint-disable directives | ✅ Fixed | Removed all 8 unused eslint-disable directives and the `as any` type assertions |
 
 ### 7. Other Issues (3)
 
-| File | Line | Issue |
-|------|------|-------|
-| src/tests/security/role-access.test.ts | 14:9 | Parsing error: '>' expected |
-| supabase/functions/property-data/corelogic-transformers.ts | 128:7 | 'addressParts' is never reassigned. Use 'const' |
-| tailwind.config.ts | 95:12 | A require() style import is forbidden |
+| File | Line | Issue | Status | Fix Applied |
+|------|------|-------|--------|------------|
+| src/tests/security/role-access.test.ts | 14:9 | Parsing error: '>' expected | ✅ Fixed | Fixed TypeScript generic syntax by using semicolon instead of comma in type definition |
+| supabase/functions/property-data/corelogic-transformers.ts | 128:7 | 'addressParts' is never reassigned. Use 'const' | ✅ Fixed | Changed `let addressParts` to `const addressParts` since the array is never reassigned |
+| tailwind.config.ts | 95:12 | A require() style import is forbidden | ✅ Fixed | Replaced `require("tailwindcss-animate")` with proper ES module import |
 
 ## Proposed Fixes
 

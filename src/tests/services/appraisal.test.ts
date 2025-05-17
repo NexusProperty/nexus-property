@@ -268,11 +268,11 @@ describe('Appraisal Service', () => {
       });
 
       // Call the function with invalid data
-      // @ts-ignore - intentionally passing invalid data for testing
+      // @ts-expect-error - intentionally passing invalid data for testing
       const result = await appraisalService.createAppraisal(invalidAppraisalData);
 
       // Assertions
-      // @ts-ignore - intentionally passing invalid data for testing
+      // @ts-expect-error - intentionally passing invalid data for testing
       expect(createAppraisalSpy).toHaveBeenCalledWith(invalidAppraisalData);
       expect(result.success).toBe(false);
       expect(result.error).toContain('Validation error');
@@ -439,11 +439,11 @@ describe('Appraisal Service', () => {
       });
 
       // Call the function with invalid data
-      // @ts-ignore - intentionally passing invalid data for testing
+      // @ts-expect-error - intentionally passing invalid data for testing
       const result = await appraisalService.addComparableProperties(invalidComparables);
 
       // Assertions
-      // @ts-ignore - intentionally passing invalid data for testing
+      // @ts-expect-error - intentionally passing invalid data for testing
       expect(addComparablePropertiesSpy).toHaveBeenCalledWith(invalidComparables);
       expect(result.success).toBe(false);
       expect(result.error).toContain('Validation error');

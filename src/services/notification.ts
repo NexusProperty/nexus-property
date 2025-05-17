@@ -59,10 +59,10 @@ export interface NotificationResponse<T = unknown> {
 }
 
 // Suppress TypeScript errors since these tables will be created in a future migration
-// @ts-ignore - Future implementation: suppress errors for tables that don't exist yet
+// @ts-expect-error - Future implementation: suppress errors for tables that don't exist yet
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const notificationsTable = 'notifications' as any;
-// @ts-ignore - Future implementation: suppress errors for tables that don't exist yet
+// @ts-expect-error - Future implementation: suppress errors for tables that don't exist yet
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const preferencesTable = 'notification_preferences' as any;
 
