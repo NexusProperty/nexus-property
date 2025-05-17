@@ -199,7 +199,7 @@ export class CircuitBreaker {
   /**
    * Get metrics about the circuit breaker
    */
-  public getMetrics(): Record<string, any> {
+  public getMetrics(): Record<string, unknown> {
     return {
       state: this.state,
       failureCount: this.failureCount,

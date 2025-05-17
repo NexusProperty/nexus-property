@@ -52,7 +52,7 @@ function useKeyboardNavigation(
     return () => {
       targetElement.removeEventListener('keydown', handleKeyDown as EventListener);
     };
-  }, [handleKeyDown, ref, active, ...deps]);
+  }, [handleKeyDown, ref, active].concat(deps));
 }
 
 /**

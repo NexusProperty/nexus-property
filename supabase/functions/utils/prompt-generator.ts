@@ -99,7 +99,7 @@ export function generatePrompt(
     template,
     contextKeys: Object.keys(context),
     options,
-  }));
+  } as Record<string, unknown>));
 
   // Format different sections of the prompt based on available data
   const propertyDescription = generatePropertyDescription(context);
@@ -154,7 +154,7 @@ ${styleGuidance}
     message: 'Generated prompt',
     promptLength: completePrompt.length,
     promptFirstChars: completePrompt.substring(0, 100) + '...',
-  }));
+  } as Record<string, unknown>));
 
   return completePrompt;
 }
@@ -359,7 +359,7 @@ export function formatAIResponse(
   rawResponse: string, 
   template: PromptTemplate,
   outputFormat: 'text' | 'bullets' | 'json' | 'structured' = 'structured'
-): any {
+): AIResponse {
   if (outputFormat === 'json') {
     try {
       // Attempt to parse as JSON

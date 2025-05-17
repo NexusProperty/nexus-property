@@ -1,18 +1,8 @@
 import React from 'react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
-
-// Define our own ErrorCategory enum since we might have issues with the import
-export enum ErrorCategory {
-  VALIDATION = 'validation_error',
-  AUTHENTICATION = 'authentication_error',
-  AUTHORIZATION = 'authorization_error',
-  NOT_FOUND = 'not_found',
-  CONFLICT = 'conflict',
-  SERVER_ERROR = 'server_error',
-  NETWORK_ERROR = 'network_error',
-  UNKNOWN = 'unknown_error'
-}
+// Import the enum from a separate file
+import { ErrorCategory } from '@/lib/enums/error-categories';
 
 export interface ErrorMessageProps {
   /** The error message to display */

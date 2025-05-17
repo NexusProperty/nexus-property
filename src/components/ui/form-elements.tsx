@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useForm, FormProvider, Controller, FieldValues, UseFormReturn, SubmitHandler, FieldErrors, Control, DefaultValues } from "react-hook-form";
+import { useForm, FormProvider, Controller, FieldValues, UseFormReturn, SubmitHandler, FieldErrors, Control } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { cn } from "@/lib/utils";
@@ -11,6 +11,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, Check } from "lucide-react";
+
+// Import utility functions from their dedicated location
+import { createFormSchema, useZodForm } from "@/lib/form-utils/form-utils";
 
 // Form Context Component
 interface FormContextProps<T extends FieldValues> {
@@ -455,36 +458,6 @@ export function FormActions({
       </Button>
     </div>
   );
-}
-
-// Form utility functions
-
-/**
- * Creates a Zod schema from a record of field schemas
- * 
- * @param fields Record of field names mapped to their Zod schemas
- * @returns A Zod object schema
- */
-export function createFormSchema(fields: Record<string, z.ZodType<unknown>>) {
-  return z.object(fields);
-}
-
-/**
- * Creates a form using Zod validation
- * 
- * @param schema Zod schema for form validation
- * @param defaultValues Default values for form fields
- * @returns A form instance with Zod validation
- */
-export function useZodForm<T extends z.ZodType<unknown>>(
-  schema: T,
-  defaultValues = {}
-) {
-  return useForm<z.infer<T>>({
-    resolver: zodResolver(schema),
-    // @ts-expect-error - Default values type compatibility issue
-    defaultValues,
-  });
 }
 
 /**

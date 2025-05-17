@@ -83,9 +83,9 @@ export function PropertyAccess({ propertyId, isOwner }: PropertyAccessProps) {
     if (!propertyId || !user) return;
 
     fetchPropertyAccess();
-  }, [propertyId, user]);
+  }, [propertyId, user, fetchPropertyAccess]);
 
-  const fetchPropertyAccess = async () => {
+  const fetchPropertyAccess = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
@@ -126,7 +126,7 @@ export function PropertyAccess({ propertyId, isOwner }: PropertyAccessProps) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [propertyId]);
 
   const searchUsersByEmail = async (email: string) => {
     if (email.trim().length < 3) {

@@ -1,39 +1,9 @@
-import React, { createContext, useContext, useEffect, useState, useMemo, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { Session, User } from '@supabase/supabase-js';
-import { getSession, getUser, onAuthStateChange, signOut } from '@/services/auth';
+import { getSession, getUser, onAuthStateChange } from '@/services/auth';
 import { getProfile } from '@/services/user';
-import { Database } from '@/types/supabase';
 import { initializeSessionHandler, stopTokenRefreshInterval, manualTokenRefresh } from '@/lib/session-handler';
-
-type Profile = Database['public']['Tables']['profiles']['Row'];
-
-interface AuthContextType {
-  session: Session | null;
-  user: User | null;
-  profile: Profile | null;
-  isLoading: boolean;
-  isAuthenticating: boolean;
-  isLoadingProfile: boolean;
-  isAuthenticated: boolean;
-  error: string | null;
-  refreshProfile: () => Promise<void>;
-  refreshAuthToken: () => Promise<boolean>;
-}
-
-const AuthContext = createContext<AuthContextType>({
-  session: null,
-  user: null,
-  profile: null,
-  isLoading: true,
-  isAuthenticating: false,
-  isLoadingProfile: false,
-  isAuthenticated: false,
-  error: null,
-  refreshProfile: async () => {},
-  refreshAuthToken: async () => false,
-});
-
-export const useAuth = () => useContext(AuthContext);
+import { AuthContext, Profile, AuthContextType } from '@/lib/auth/auth-context';
 
 interface AuthProviderProps {
   children: React.ReactNode;
@@ -229,4 +199,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   ]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-}; 
+}
+
+export { AuthProvider };

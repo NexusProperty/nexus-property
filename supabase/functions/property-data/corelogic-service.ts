@@ -183,7 +183,7 @@ class CoreLogicApiClient {
   /**
    * Log a message with the specified log level
    */
-  private log(level: LogLevel, message: string, data: any = {}): void {
+  private log(level: LogLevel, message: string, data: Record<string, unknown> = {}): void {
     if (level <= this.options.logLevel) {
       const levelName = LogLevel[level];
       console.log(JSON.stringify({
@@ -220,22 +220,22 @@ class CoreLogicApiClient {
 
     try {
       // Make the API request
-      const data = await this.makeApiRequest<any>(`/search/nz/matcher/address?${params.toString()}`);
+      const data = await this.makeApiRequest<Record<string, unknown>>(`/search/nz/matcher/address?${params.toString()}`);
       
       // Transform the response to our interface format
       const matchedAddress: CoreLogicMatchedAddress = {
-        propertyId: data.propertyId,
-        fullAddress: data.formattedAddress,
-        address: data.address,
+        propertyId: data.propertyId as string,
+        fullAddress: data.formattedAddress as string,
+        address: data.address as string,
         addressComponents: {
-          streetNumber: data.streetNumber,
-          streetName: data.streetName,
-          streetType: data.streetType,
-          suburb: data.suburb,
-          city: data.city,
-          postcode: data.postcode
+          streetNumber: data.streetNumber as string,
+          streetName: data.streetName as string,
+          streetType: data.streetType as string,
+          suburb: data.suburb as string,
+          city: data.city as string,
+          postcode: data.postcode as string
         },
-        confidence: data.confidence
+        confidence: data.confidence as number
       };
 
       this.log(LogLevel.INFO, "Address matched successfully", {
@@ -271,12 +271,12 @@ class CoreLogicApiClient {
 
     try {
       // Make the API request for core attributes
-      const coreData = await this.makeApiRequest<any>(
+      const coreData = await this.makeApiRequest<Record<string, unknown>>(
         `/property-details/nz/properties/${propertyId}/attributes/core`
       );
       
       // Make the API request for additional attributes
-      const additionalData = await this.makeApiRequest<any>(
+      const additionalData = await this.makeApiRequest<Record<string, unknown>>(
         `/property-details/nz/properties/${propertyId}/attributes/additional`
       );
 
@@ -331,12 +331,12 @@ class CoreLogicApiClient {
 
     try {
       // Make the API request
-      const data = await this.makeApiRequest<any>(
+      const data = await this.makeApiRequest<Record<string, unknown>>(
         `/property-details/nz/properties/${propertyId}/sales`
       );
 
       // Transform the response to our interface format
-      const salesHistory: CoreLogicSaleRecord[] = (data.sales || []).map((sale: any) => ({
+      const salesHistory: CoreLogicSaleRecord[] = ((data.sales as Array<Record<string, unknown>>) || []).map((sale: Record<string, unknown>) => ({
         saleId: sale.saleId,
         propertyId,
         saleDate: sale.saleDate,
@@ -381,28 +381,28 @@ class CoreLogicApiClient {
 
     try {
       // Make the API request
-      const data = await this.makeApiRequest<any>(
+      const data = await this.makeApiRequest<Record<string, unknown>>(
         `/avm/nz/properties/${propertyId}/avm/intellival/consumer/current`
       );
 
       // Transform the response to our interface format
       const avmResponse: CoreLogicAVMResponse = {
         propertyId,
-        valuationDate: data.valuationDate,
-        estimatedValue: data.estimatedValue?.value || 0,
-        confidenceScore: data.confidenceScore || 0,
-        forecastedGrowth: data.forecastedGrowth?.value || 0,
+        valuationDate: data.valuationDate as string,
+        estimatedValue: ((data.estimatedValue as Record<string, unknown>)?.value as number) || 0,
+        confidenceScore: data.confidenceScore as number || 0,
+        forecastedGrowth: ((data.forecastedGrowth as Record<string, unknown>)?.value as number) || 0,
         valuationRange: {
-          low: data.valuationRange?.lowValue?.value || 0,
-          high: data.valuationRange?.highValue?.value || 0
+          low: ((data.valuationRange as Record<string, unknown>)?.lowValue as Record<string, unknown>)?.value as number || 0,
+          high: ((data.valuationRange as Record<string, unknown>)?.highValue as Record<string, unknown>)?.value as number || 0
         },
         lastSale: data.lastSale ? {
-          salePrice: data.lastSale.salePrice?.value || 0,
-          saleDate: data.lastSale.saleDate,
-          changePercentage: data.lastSale.changePercentage?.value || 0,
-          changeValue: data.lastSale.changeValue?.value || 0
+          salePrice: ((data.lastSale as Record<string, unknown>).salePrice as Record<string, unknown>)?.value as number || 0,
+          saleDate: (data.lastSale as Record<string, unknown>).saleDate as string,
+          changePercentage: ((data.lastSale as Record<string, unknown>).changePercentage as Record<string, unknown>)?.value as number || 0,
+          changeValue: ((data.lastSale as Record<string, unknown>).changeValue as Record<string, unknown>)?.value as number || 0
         } : null,
-        comparableProperties: (data.comparableProperties || []).map((comp: any) => ({
+        comparableProperties: ((data.comparableProperties as Array<Record<string, unknown>>) || []).map((comp: Record<string, unknown>) => ({
           propertyId: comp.propertyId,
           address: comp.address,
           salePrice: comp.salePrice?.value || 0,
@@ -465,7 +465,7 @@ class CoreLogicApiClient {
       };
 
       // Make the API request
-      const data = await this.makeApiRequest<any>(
+      const data = await this.makeApiRequest<Record<string, unknown>>(
         "/statistics/v1/statistics.json",
         {
           method: "POST",
@@ -475,8 +475,8 @@ class CoreLogicApiClient {
 
       // Helper function to find a metric value
       const getMetricValue = (metricName: string): number => {
-        const metric = data.metrics?.find((m: any) => m.name === metricName);
-        return metric?.value || 0;
+        const metric = (data.metrics as Array<Record<string, unknown>>)?.find((m: Record<string, unknown>) => m.name === metricName);
+        return (metric?.value as number) || 0;
       };
 
       // Transform the response to our interface format
@@ -528,14 +528,14 @@ class CoreLogicApiClient {
 
     try {
       // Make the API request
-      const data = await this.makeApiRequest<any>(
+      const data = await this.makeApiRequest<Record<string, unknown>>(
         `/property-details/nz/properties/${propertyId}/images/default`
       );
 
       // Transform the response to our interface format
       const propertyImages: CoreLogicPropertyImages = {
         propertyId,
-        images: (data.images || []).map((image: any) => ({
+        images: ((data.images as Array<Record<string, unknown>>) || []).map((image: Record<string, unknown>) => ({
           propertyId,
           imageId: image.imageId || `img-${Math.random().toString(36).substring(2, 11)}`,
           imageUrl: image.url || "",
@@ -579,23 +579,23 @@ class CoreLogicApiClient {
 
     try {
       // Make the API request
-      const data = await this.makeApiRequest<any>(
+      const data = await this.makeApiRequest<Record<string, unknown>>(
         `/property-details/nz/properties/${propertyId}/title`
       );
 
       // Transform the response to our interface format
       const titleDetail: CoreLogicTitleDetail = {
         propertyId,
-        titleReference: data.titleReference || "",
-        titleType: data.titleType || "Freehold",
-        landDistrict: data.landDistrict || "",
-        estateType: data.estateType || "Fee Simple",
-        registeredOwners: data.registeredOwners || [],
-        legalDescription: data.legalDescription || "",
-        areaSize: data.areaSize?.value || 0,
-        areaUnit: (data.areaSize?.unit === "ha" ? "hectares" : "sqm") as "sqm" | "hectares",
-        issueDate: data.issueDate || "",
-        encumbrances: (data.encumbrances || []).map((enc: any) => ({
+        titleReference: data.titleReference as string || "",
+        titleType: data.titleType as string || "Freehold",
+        landDistrict: data.landDistrict as string || "",
+        estateType: data.estateType as string || "Fee Simple",
+        registeredOwners: data.registeredOwners as string[] || [],
+        legalDescription: data.legalDescription as string || "",
+        areaSize: (data.areaSize as Record<string, unknown>)?.value as number || 0,
+        areaUnit: ((data.areaSize as Record<string, unknown>)?.unit === "ha" ? "hectares" : "sqm") as "sqm" | "hectares",
+        issueDate: data.issueDate as string || "",
+        encumbrances: ((data.encumbrances as Array<Record<string, unknown>>) || []).map((enc: Record<string, unknown>) => ({
           type: enc.type || "",
           reference: enc.reference || "",
           dateRegistered: enc.dateRegistered || "",
@@ -644,14 +644,14 @@ class CoreLogicApiClient {
       if (request.saleTimeframe) params.append("saleTimeframe", request.saleTimeframe.toString());
 
       // Make the API request
-      const data = await this.makeApiRequest<any>(
+      const data = await this.makeApiRequest<Record<string, unknown>>(
         `/property-details/nz/properties/${propertyId}/comparables?${params.toString()}`
       );
 
       // Transform the response to our interface format
       const comparableResponse: CoreLogicComparableResponse = {
         sourcePropertyId: propertyId,
-        comparableProperties: (data.comparables || []).map((comp: any) => ({
+        comparableProperties: ((data.comparables as Array<Record<string, unknown>>) || []).map((comp: Record<string, unknown>) => ({
           propertyId: comp.propertyId || "",
           address: comp.address || "",
           suburb: comp.suburb || "",
@@ -703,7 +703,7 @@ class CoreLogicApiClient {
 
     try {
       // Make the API request
-      const data = await this.makeApiRequest<any>(
+      const data = await this.makeApiRequest<Record<string, unknown>>(
         `/property-details/nz/properties/${propertyId}/activity`
       );
 

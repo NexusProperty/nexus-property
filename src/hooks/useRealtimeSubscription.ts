@@ -26,6 +26,30 @@ export function useRealtimeSubscription<T = unknown>(
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
+  // Memoize filters to avoid unnecessary re-renders
+  const memoizedFilters = useCallback(() => {
+    if (!filters) return undefined;
+    
+    const config: {
+      event?: 'INSERT' | 'UPDATE' | 'DELETE' | '*';
+      filter?: string;
+    } = {};
+    
+    if (filters.event) {
+      config.event = filters.event;
+    }
+    
+    if (filters.filter) {
+      config.filter = filters.filter;
+    }
+    
+    if (filters.eq) {
+      config.filter = `${filters.eq.column}=eq.${filters.eq.value}`;
+    }
+    
+    return config;
+  }, [filters]);
+
   useEffect(() => {
     // Build the channel configuration
     let channel = supabase.channel(`table-changes-${table}`);
@@ -42,25 +66,22 @@ export function useRealtimeSubscription<T = unknown>(
     };
     
     // Add filters if provided
-    if (filters) {
-      if (filters.event) {
-        subscriptionConfig.event = filters.event;
+    const filterConfig = memoizedFilters();
+    if (filterConfig) {
+      if (filterConfig.event) {
+        subscriptionConfig.event = filterConfig.event;
       }
       
-      if (filters.filter) {
-        subscriptionConfig.filter = filters.filter;
-      }
-      
-      if (filters.eq) {
-        subscriptionConfig.filter = `${filters.eq.column}=eq.${filters.eq.value}`;
+      if (filterConfig.filter) {
+        subscriptionConfig.filter = filterConfig.filter;
       }
     }
     
-    // Subscribe to changes - use any type to avoid the type error with 'postgres_changes'
+    // Subscribe to changes - using more specific type casting for the supabase client
     // This is a typing issue with the Supabase JS client
     channel = channel
       .on(
-        'postgres_changes' as any,
+        'postgres_changes' as unknown as `postgres_changes:${string}`,
         subscriptionConfig,
         (payload: RealtimePostgresChangesPayload<T>) => {
           console.log('Realtime update received:', payload);
@@ -113,7 +134,7 @@ export function useRealtimeSubscription<T = unknown>(
       console.log(`Unsubscribing from ${table} changes`);
       channel.unsubscribe();
     };
-  }, [table, schema, JSON.stringify(filters), toast]);
+  }, [table, schema, memoizedFilters, toast]);
 
   return {
     isConnected,

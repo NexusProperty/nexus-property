@@ -523,7 +523,7 @@ export function AppraisalDetail() {
   });
 
   // Fetch appraisal data
-  const fetchAppraisal = async () => {
+  const fetchAppraisal = useCallback(async () => {
     if (!id) return;
 
       setIsLoading(true);
@@ -544,12 +544,12 @@ export function AppraisalDetail() {
       } finally {
         setIsLoading(false);
       }
-    };
+    }, [id]);
 
   // Load appraisal on mount
   useEffect(() => {
     fetchAppraisal();
-  }, [id]);
+  }, [id, fetchAppraisal]);
 
   // Update data when realtime changes are received
   useEffect(() => {
