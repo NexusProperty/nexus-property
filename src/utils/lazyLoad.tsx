@@ -9,7 +9,7 @@ import React, { lazy, Suspense, ComponentType } from 'react';
  * @param options - Additional options (chunks, preload, etc.)
  * @returns Lazy loaded component
  */
-export function lazyLoad<T extends ComponentType<any>>(
+export function lazyLoad<T extends ComponentType<unknown>>(
   importFn: () => Promise<{ default: T }>,
   fallback: React.ReactNode = <DefaultLoadingFallback />,
   errorComponent?: React.ComponentType<{ error: Error }>,
@@ -115,15 +115,15 @@ class ErrorBoundary extends React.Component<
  * @param components - Object with component import functions
  * @returns Object with lazy-loaded components
  */
-export function lazyLoadComponents<T extends Record<string, () => Promise<{ default: ComponentType<any> }>>>(
+export function lazyLoadComponents<T extends Record<string, () => Promise<{ default: ComponentType<unknown> }>>>(
   components: T
-): { [K in keyof T]: React.ComponentType<any> } {
+): { [K in keyof T]: React.ComponentType<unknown> } {
   return Object.entries(components).reduce(
     (acc, [key, importFn]) => {
       acc[key as keyof T] = lazyLoad(importFn);
       return acc;
     },
-    {} as { [K in keyof T]: React.ComponentType<any> }
+    {} as { [K in keyof T]: React.ComponentType<unknown> }
   );
 }
 

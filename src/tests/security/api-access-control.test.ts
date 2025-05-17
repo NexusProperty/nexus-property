@@ -54,7 +54,7 @@ describe('API Access Control Tests', () => {
     };
     
     // Setup createClient mock
-    (createClient as any).mockReturnValue(mockSupabaseClient);
+    (createClient as jest.MockedFunction<typeof createClient>).mockReturnValue(mockSupabaseClient);
   });
 
   describe('Edge Function: property-data', () => {

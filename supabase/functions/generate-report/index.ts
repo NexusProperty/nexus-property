@@ -16,9 +16,9 @@ interface AppraisalData {
   valuation_low: number;
   valuation_high: number;
   valuation_confidence: number;
-  property_details: Record<string, any>;
-  market_analysis: Record<string, any>;
-  comparables: Array<Record<string, any>>;
+  property_details: Record<string, unknown>;
+  market_analysis: Record<string, unknown>;
+  comparables: Array<Record<string, unknown>>;
   user_id: string;
   created_at: string;
   updated_at: string;

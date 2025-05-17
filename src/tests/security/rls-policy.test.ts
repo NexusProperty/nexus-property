@@ -73,7 +73,7 @@ describe('Row Level Security Policy Tests', () => {
     };
     
     // Setup createClient mock
-    (createClient as any).mockReturnValue(mockSupabaseClient);
+    (createClient as jest.MockedFunction<typeof createClient>).mockReturnValue(mockSupabaseClient);
   });
 
   describe('Property Table RLS Policies', () => {

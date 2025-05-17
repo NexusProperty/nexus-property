@@ -119,7 +119,7 @@ describe('AuthContext', () => {
           id: 'test-user-id',
           email: 'test@example.com',
         },
-      } as any,
+      } as import('@supabase/supabase-js').Session,
       error: null,
     });
     
@@ -128,7 +128,7 @@ describe('AuthContext', () => {
         user: {
           id: 'test-user-id',
           email: 'test@example.com',
-        } as any,
+        } as import('@supabase/supabase-js').User,
       },
     });
     

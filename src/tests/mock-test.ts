@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { PropertyValuationData } from '@/data/property-valuation-data';
 
 // @ts-expect-error - Mock instance is added by our setup.ts
-const mockInstance = (PropertyValuationData as any).mockInstance;
+const mockInstance = (PropertyValuationData as { mockInstance: unknown }).mockInstance;
 
 describe('Mock Test', () => {
   it('should have proper mock instance setup', () => {

@@ -9,8 +9,8 @@ const NUM_ITERATIONS = 5; // Number of times to run each test for averaging
 const CONCURRENT_USERS = 3; // Simulate concurrent user requests
 
 // Helper function to measure API call performance
-const measureApiPerformance = async (
-  apiCall: () => Promise<any>, 
+const measureApiPerformance = async <T>(
+  apiCall: () => Promise<T>, 
   iterations: number = NUM_ITERATIONS
 ): Promise<{ averageTime: number; maxTime: number; minTime: number }> => {
   const times: number[] = [];
@@ -30,8 +30,8 @@ const measureApiPerformance = async (
 };
 
 // Helper function to simulate concurrent API calls
-const simulateConcurrentRequests = async (
-  apiCall: () => Promise<any>, 
+const simulateConcurrentRequests = async <T>(
+  apiCall: () => Promise<T>, 
   numUsers: number = CONCURRENT_USERS
 ): Promise<{ averageTime: number; maxTime: number; minTime: number }> => {
   const start = performance.now();
