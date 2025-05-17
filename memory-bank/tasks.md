@@ -33,6 +33,44 @@
 - All files will reside within the memory-bank directory
 - System will support creative phase documentation, reflection, and archiving
 
+# CoreLogic API Integration Task
+
+## Summary
+We need to integrate the CoreLogic NZ API to provide accurate property data, valuations, and market insights for our automated appraisal system. This will replace the current mock implementations with real data from CoreLogic, enhancing the accuracy and reliability of our property appraisals.
+
+## Current Focus
+- [ ] Setup CoreLogic API Integration
+  - [ ] Create CoreLogic API client with authentication
+  - [ ] Implement API endpoints for property data
+  - [ ] Develop data transformation layer
+  - [ ] Update Edge Functions to use CoreLogic data
+  - [ ] Implement comprehensive error handling
+
+## Implementation Steps
+1. Create CoreLogic service module structure
+2. Implement core API methods for property data
+3. Develop data transformation functions
+4. Create mock implementation for development
+5. Update existing Edge Functions
+6. Implement sandbox integration
+7. Comprehensive testing
+8. Performance optimization
+9. Production deployment
+
+## Files Created
+- [x] Implementation plan: [CoreLogic-API/implementation-plan.md](./CoreLogic-API/implementation-plan.md)
+- [x] Task breakdown: [CoreLogic-API/tasks.md](./CoreLogic-API/tasks.md)
+- [x] Type definitions: [CoreLogic-API/corelogic-types.ts](./CoreLogic-API/corelogic-types.ts)
+- [x] API service: [CoreLogic-API/corelogic-service.ts](./CoreLogic-API/corelogic-service.ts)
+- [x] Mock implementation: [CoreLogic-API/corelogic-mock.ts](./CoreLogic-API/corelogic-mock.ts)
+- [x] Data transformers: [CoreLogic-API/corelogic-transformers.ts](./CoreLogic-API/corelogic-transformers.ts)
+
+## Next Steps
+- [ ] Request CoreLogic API sandbox credentials
+- [ ] Set up development environment for CoreLogic integration
+- [ ] Begin implementation of API client
+- [ ] Create and run unit tests for the implementation
+
 # Testing Task Implementation Progress
 
 ## Summary
