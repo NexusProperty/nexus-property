@@ -53,10 +53,12 @@ import {
   Save, 
   Shield, 
   User, 
-  UserCog2
+  UserCog2,
+  Badge,
+  Building
 } from 'lucide-react'
 import { Separator } from '@/components/ui/separator'
-import { Badge } from '@/components/ui/badge'
+import { Badge as UIBadge } from '@/components/ui/badge'
 import { 
   AlertDialog,
   AlertDialogAction,
@@ -69,6 +71,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { useToast } from '@/components/ui/use-toast'
+import { ImageUploader } from '@/components/ui/upload/ImageUploader';
 
 const profileFormSchema = z.object({
   name: z.string().min(2, {
@@ -84,6 +87,8 @@ const profileFormSchema = z.object({
   bio: z.string().max(500, {
     message: "Bio must not exceed 500 characters.",
   }).optional(),
+  licenseNumber: z.string().optional(),
+  agencyName: z.string().optional(),
   language: z.string({
     required_error: "Please select a language.",
   }),
@@ -109,6 +114,8 @@ const mockUser = {
   phone: '(555) 987-6543',
   jobTitle: 'Senior Appraiser',
   bio: 'Professional appraiser with over 10 years of experience in commercial and residential property valuation.',
+  licenseNumber: 'REA12345',
+  agencyName: 'ABC Property Group',
   language: 'en',
   timeZone: 'America/New_York',
   avatarUrl: '',
@@ -125,6 +132,8 @@ const mockUser = {
 
 export function ProfileSettings() {
   const { toast } = useToast()
+  const [avatarUrl, setAvatarUrl] = useState<string>(mockUser.avatarUrl)
+  const [isEditingPhoto, setIsEditingPhoto] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [activeTab, setActiveTab] = useState<string>("profile")
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false)
@@ -141,6 +150,8 @@ export function ProfileSettings() {
       phone: mockUser.phone,
       jobTitle: mockUser.jobTitle || '',
       bio: mockUser.bio || '',
+      licenseNumber: mockUser.licenseNumber || '',
+      agencyName: mockUser.agencyName || '',
       language: mockUser.language,
       timeZone: mockUser.timeZone,
       notifications: mockUser.notifications,
@@ -192,18 +203,15 @@ export function ProfileSettings() {
     setConfirmPassword('')
   }
 
-  // Mock handler for avatar upload
-  const handleAvatarUpload = () => {
-    setIsUploading(true)
+  // Handler for avatar upload
+  const handleAvatarUploaded = (url: string) => {
+    setAvatarUrl(url)
+    setIsEditingPhoto(false)
     
-    // Simulate file upload delay
-    setTimeout(() => {
-      setIsUploading(false)
-      toast({
-        title: "Avatar Updated",
-        description: "Your profile picture has been updated successfully.",
-      })
-    }, 1500)
+    toast({
+      title: "Avatar Updated",
+      description: "Your profile picture has been updated successfully.",
+    })
   }
 
   return (
@@ -215,33 +223,48 @@ export function ProfileSettings() {
             <CardContent className="pt-6">
               <div className="flex flex-col items-center space-y-4">
                 <div className="relative">
-                  <Avatar className="h-24 w-24">
-                    <AvatarImage src={mockUser.avatarUrl} />
-                    <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
-                      {mockUser.name.split(' ').map(n => n[0]).join('')}
-                    </AvatarFallback>
-                  </Avatar>
-                  <Button 
-                    size="icon" 
-                    variant="outline" 
-                    className="absolute bottom-0 right-0 rounded-full h-8 w-8"
-                    onClick={handleAvatarUpload}
-                    disabled={isUploading}
-                  >
-                    {isUploading ? (
-                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                    ) : (
-                      <Camera className="h-4 w-4" />
-                    )}
-                  </Button>
+                  {isEditingPhoto ? (
+                    <div className="w-32 h-32">
+                      <ImageUploader
+                        onImageUploaded={handleAvatarUploaded}
+                        currentImageUrl={avatarUrl}
+                        aspectRatio="1/1"
+                        variant="circle"
+                        uploadEndpoint="/api/upload-avatar"
+                        buttonText="Upload Photo"
+                      />
+                    </div>
+                  ) : (
+                    <>
+                      <Avatar className="h-24 w-24">
+                        <AvatarImage src={avatarUrl} />
+                        <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
+                          {mockUser.name.split(' ').map(n => n[0]).join('')}
+                        </AvatarFallback>
+                      </Avatar>
+                      <Button 
+                        size="icon" 
+                        variant="outline" 
+                        className="absolute bottom-0 right-0 rounded-full h-8 w-8"
+                        onClick={() => setIsEditingPhoto(true)}
+                      >
+                        <Camera className="h-4 w-4" />
+                      </Button>
+                    </>
+                  )}
                 </div>
                 <div className="text-center">
                   <h2 className="text-xl font-bold">{mockUser.name}</h2>
                   <p className="text-sm text-muted-foreground">{mockUser.jobTitle}</p>
+                  {mockUser.licenseNumber && (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      License: {mockUser.licenseNumber}
+                    </p>
+                  )}
                 </div>
-                <Badge variant="secondary">
+                <UIBadge variant="secondary">
                   {mockUser.role === 'agent' ? 'Agent' : 'Admin'}
-                </Badge>
+                </UIBadge>
                 <div className="text-sm text-muted-foreground text-center">
                   <p>Member since {new Date(mockUser.joined).toLocaleDateString()}</p>
                 </div>
@@ -331,6 +354,45 @@ export function ProfileSettings() {
                                     <div className="relative">
                                       <Phone className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                                       <Input placeholder="Your phone number" className="pl-8" {...field} />
+                                    </div>
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+
+                          <div className="grid md:grid-cols-2 gap-4">
+                            <FormField
+                              control={form.control}
+                              name="licenseNumber"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>License Number</FormLabel>
+                                  <FormControl>
+                                    <div className="relative">
+                                      <Badge className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                                      <Input placeholder="Your agent license number" className="pl-8" {...field} />
+                                    </div>
+                                  </FormControl>
+                                  <FormDescription>
+                                    Your real estate agent license number (if applicable)
+                                  </FormDescription>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            
+                            <FormField
+                              control={form.control}
+                              name="agencyName"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Agency</FormLabel>
+                                  <FormControl>
+                                    <div className="relative">
+                                      <Building className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                                      <Input placeholder="Your agency name" className="pl-8" {...field} />
                                     </div>
                                   </FormControl>
                                   <FormMessage />

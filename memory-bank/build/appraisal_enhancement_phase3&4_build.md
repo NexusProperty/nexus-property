@@ -1,12 +1,12 @@
 # Appraisal Generation System Enhancement - Build Log (Phases 3 & 4)
 
-**Date**: 2025-05-25
+**Date**: 2025-05-27 (Updated)
 **Engineer**: AI Assistant
 **Project**: Nexus Property - Appraisal System Enhancement
 
 ## Overview
 
-This build log documents the implementation details for Phase 3 (Valuation Algorithm Enhancement) and the initial work on Phase 4 (Report Generation Enhancement) of the Appraisal Generation System Enhancement project.
+This build log documents the implementation details for Phase 3 (Valuation Algorithm Enhancement) and the ongoing work on Phase 4 (Report Generation Enhancement) of the Appraisal Generation System Enhancement project.
 
 ## Phase 3: Valuation Algorithm Enhancement (COMPLETED)
 
@@ -159,6 +159,20 @@ async function storeAiContent(appraisalId: string, content: AIContent) {
 
 ## Phase 4: Report Generation Enhancement (IN PROGRESS)
 
+### Task 4.1: Select PDF Generation Strategy (COMPLETED)
+
+#### Work Completed:
+- Evaluated both Puppeteer/Playwright and pdfMake for PDF generation capabilities
+- Created detailed comparison of both options in `pdf-generation-evaluation.md`
+- Decided to continue using Puppeteer due to better HTML/CSS rendering fidelity and existing implementation
+- Documented performance considerations and optimizations for Puppeteer in Edge Functions
+
+#### Decision Rationale:
+1. Existing implementation already successfully uses Puppeteer
+2. Better rendering fidelity for complex layouts and styling
+3. Support for advanced visualization needs in the enhanced reports
+4. Better compatibility with branding customization requirements
+
 ### Task 4.2: Implement Branding Integration (COMPLETED)
 
 #### Work Completed:
@@ -166,6 +180,8 @@ async function storeAiContent(appraisalId: string, content: AIContent) {
 - Implemented fallback branding for cases where agency or agent branding is not available
 - Extended the AppraisalDataRequest and AppraisalDataResponse interfaces to support branding data
 - Added a new includeBranding parameter to control when branding data should be included
+- Created enhanced BrandingConfig interface with additional styling options
+- Implemented CSS variables for dynamic branding application
 
 #### Code Changes:
 ```typescript
@@ -203,6 +219,28 @@ interface AppraisalDataResponse {
       comparableAnalysis?: string;
     };
   };
+}
+
+// Enhanced branding configuration with more styling options
+interface BrandingConfig {
+  colors?: {
+    primary?: string;
+    secondary?: string;
+    accent?: string;
+    textPrimary?: string;
+    textSecondary?: string;
+    bgPrimary?: string;
+    bgSecondary?: string;
+  };
+  logo?: string;
+  fonts?: {
+    primaryFont?: string;
+    headingFont?: string;
+  };
+  disclaimer?: string;
+  contactDetails?: string;
+  agentPhoto?: string;
+  showTeamInfo?: boolean;
 }
 
 // Function to retrieve branding data (implemented in fetchAppraisalData function)
@@ -262,6 +300,73 @@ if (request.includeBranding) {
     // Error handling
   }
 }
+
+// CSS implementation for dynamic branding
+:root {
+  --brand-primary: {{brand_colors.primary}};
+  --brand-secondary: {{brand_colors.secondary}};
+  --text-primary: {{brand_colors.textPrimary}};
+  --text-secondary: {{brand_colors.textSecondary}};
+  --bg-primary: {{brand_colors.bgPrimary}};
+  --bg-secondary: {{brand_colors.bgSecondary}};
+  --bg-accent: {{brand_colors.accent}};
+  --font-primary: {{brand_fonts.primaryFont}};
+  --font-heading: {{brand_fonts.headingFont}};
+}
+```
+
+### Task 4.3: Enhance Report Template Design (COMPLETED)
+
+#### Work Completed:
+- Created detailed wireframes for the enhanced report layout in `report-template-wireframe.md`
+- Updated the HTML template to support new sections for CoreLogic and REINZ data
+- Added dedicated sections for AI-generated content (market overview, property description, comparable analysis)
+- Designed data visualizations for market trends using CSS and HTML
+- Implemented consistent styling with agency branding elements
+- Added support for additional property data fields and improved comparable properties display
+
+#### Template Enhancements:
+```html
+<!-- CoreLogic Market Data Section -->
+<h3>CoreLogic Market Insights</h3>
+<div class="data-source-container">
+  <div class="data-source-logo">
+    <img src="{{corelogic_logo_url}}" alt="CoreLogic" style="height: 30px;">
+  </div>
+  <div class="data-grid market-data-grid">
+    {{#each corelogic_market_statistics}}
+    <div class="data-grid-item">
+      <div class="data-label">{{@key}}</div>
+      <div class="data-value">{{this}}</div>
+    </div>
+    {{/each}}
+  </div>
+</div>
+
+<!-- Property Activity Summary -->
+<h3>Recent Sales Activity</h3>
+<div class="activity-summary">
+  <table>
+    <thead>
+      <tr>
+        <th>Period</th>
+        <th>Number of Sales</th>
+        <th>Median Price</th>
+        <th>Change</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{#each property_activity_summary}}
+      <tr>
+        <td>{{this.period}}</td>
+        <td>{{this.sales_count}}</td>
+        <td>{{valuation_currency}}{{this.median_price}}</td>
+        <td class="{{this.change_class}}">{{this.price_change}}%</td>
+      </tr>
+      {{/each}}
+    </tbody>
+  </table>
+</div>
 ```
 
 ### Task 4.4: Update Report Generation Edge Function (PARTIALLY COMPLETED)
@@ -272,9 +377,22 @@ if (request.includeBranding) {
 - Enhanced the response structure to include AI-generated content and branding information
 - Added structured JSON logging for better monitoring of report data aggregation
 - Updated analytics tracking to include data about branding and AI content availability
+- Enhanced data fetching for CoreLogic data and market statistics
+- Created test script for validating the enhanced report generation
 
 #### Code Changes:
 ```typescript
+// Enhanced request parameters for report generation
+interface ReportRequest {
+  appraisalId: string;
+  brandingConfig?: BrandingConfig;
+  preview?: boolean;
+  skipAuth?: boolean;
+  includeAIContent?: boolean;
+  includeCoreLogicData?: boolean;
+  includeREINZData?: boolean;
+}
+
 // In the fetchAppraisalData function
 // Add AI content retrieval
 try {
@@ -301,6 +419,37 @@ try {
   // Error handling
 }
 
+// Enhanced data fetching for CoreLogic data
+if (requestData.includeCoreLogicData !== false) {
+  // Fetch CoreLogic AVM data
+  const { data: clData, error: corelogicError } = await supabaseClient
+    .from('corelogic_property_data')
+    .select('*')
+    .eq('property_id', appraisalData.property_id)
+    .maybeSingle();
+  
+  // Fetch CoreLogic market statistics
+  const { data: clMarketStats, error: marketStatsError } = await supabaseClient
+    .from('appraisals')
+    .select('market_statistics_corelogic')
+    .eq('property_id', appraisalData.property_id)
+    .maybeSingle();
+    
+  // Format activity data for the report
+  if (propertyActivitySummary) {
+    propertyActivitySummary = Object.entries(propertyActivitySummary).map(([period, data]) => {
+      const priceChange = data.price_change || 0;
+      return {
+        period,
+        sales_count: data.sales_count,
+        median_price: data.median_price,
+        price_change: priceChange.toFixed(1),
+        change_class: priceChange >= 0 ? 'positive-change' : 'negative-change'
+      };
+    });
+  }
+}
+
 // Update analytics tracking
 const { error } = await supabase
   .from('appraisal_data_requests')
@@ -315,23 +464,17 @@ const { error } = await supabase
     has_market_data: !!response.data.marketData,
     has_avm: !!response.data.valuations.avm,
     has_branding: !!response.data.branding,
-    has_ai_content: !!response.data.aiContent
+    has_ai_content: !!response.data.aiContent,
+    has_corelogic_data: !!response.data.corelogicData,
+    has_reinz_data: !!response.data.reinzData
   });
 ```
 
-### Pending Tasks for Phase 4:
-- Task 4.1: Select PDF Generation Strategy
-  - Evaluate Puppeteer/Playwright vs pdfMake
-  - Set up selected library in Edge Function
-  - Create test templates
-- Task 4.3: Enhance Report Template Design
-  - Create wireframes for report layout
-  - Implement new sections for CoreLogic and AI content
-  - Design data visualizations for market trends
-  - Implement consistent styling with branding
+### Remaining Tasks for Phase 4:
 - Complete Task 4.4:
-  - Implement template rendering with new design
-  - Optimize image handling
+  - Optimize image handling for better performance
+  - Implement image caching for agency logos and property images
+  - Add automatic compression for large images
 
 ## Key Learnings and Observations
 
@@ -339,12 +482,19 @@ const { error } = await supabase
 2. The z-score outlier detection method more reliably identifies anomalous comparables compared to the previous fixed percentage threshold.
 3. The AI-generated content provides valuable contextual information that makes the appraisals more informative and professional.
 4. The new branding integration lays a solid foundation for creating customized, agency-branded reports.
+5. Puppeteer remains the best solution for our PDF generation needs, offering superior rendering fidelity compared to alternatives.
+6. Dynamic branding using CSS variables provides a clean and maintainable approach to customizing report appearance.
+7. The enhanced template design with dedicated sections for CoreLogic and AI content significantly improves the overall report value.
 
 ## Next Steps
 
-1. Complete the evaluation of PDF generation libraries and select the most appropriate solution
-2. Design the report template layout, focusing on incorporating the new data elements and branding
-3. Implement the template rendering logic in the report generation Edge Function
+1. Complete the image optimization implementation for better performance:
+   - Create an image optimization utility in the Edge Function
+   - Implement image caching for agency logos and property images
+   - Add automatic compression for large images
+   - Implement lazy loading strategy for report images
+2. Conduct comprehensive testing with various data scenarios
+3. Document the enhanced report generation process
 4. Begin work on the frontend updates to manage branding settings and preview reports
 
 ## Technical Debt / Issues to Address
@@ -352,8 +502,30 @@ const { error } = await supabase
 1. Consider implementing caching for branding data to improve performance
 2. Need to optimize image handling for the PDF reports, particularly for property and agent photos
 3. Should establish a monitoring system for tracking report generation performance and success rates
+4. Implement a cleanup mechanism for cached images to prevent storage bloat
+5. Add more comprehensive error recovery for image failures in the report generation process
+
+## Final Testing Plan
+
+1. PDF Generation Performance Testing
+   - Test with various image sizes and counts
+   - Measure report generation time before and after optimization
+   - Identify bottlenecks in the rendering process
+   - Document performance findings
+
+2. Branding Integration Testing
+   - Test with different branding configurations
+   - Verify color scheme application across report elements
+   - Validate font consistency
+   - Test with various logo sizes and formats
+
+3. Data Integration Testing
+   - Verify CoreLogic data display
+   - Test REINZ data integration
+   - Validate AI-generated content formatting
+   - Test with missing or incomplete data scenarios
 
 ---
 
 Build log prepared by: AI Assistant  
-Date: 2025-05-25 
+Date: 2025-05-27 (Updated)

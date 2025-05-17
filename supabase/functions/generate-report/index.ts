@@ -9,6 +9,9 @@ interface ReportRequest {
   brandingConfig?: BrandingConfig;
   preview?: boolean;
   skipAuth?: boolean;
+  includeAIContent?: boolean;
+  includeCoreLogicData?: boolean;
+  includeREINZData?: boolean;
 }
 
 interface BrandingConfig {
@@ -27,6 +30,9 @@ interface BrandingConfig {
     headingFont?: string;
   };
   disclaimer?: string;
+  contactDetails?: string;
+  agentPhoto?: string;
+  showTeamInfo?: boolean;
 }
 
 interface Property {
@@ -226,11 +232,12 @@ async function generatePDF(
       // Branding
       agency_logo_url: branding.logo,
       agency_name: agency?.name || "Nexus Property",
-      agency_contact_details: agency?.contact_details || "contact@nexusproperty.com",
+      agency_contact_details: branding.contactDetails || agency?.contact_details || "contact@nexusproperty.com",
       agency_disclaimer_text: branding.disclaimer,
       
       // Custom styling variables will be injected with CSS
       brand_colors: branding.colors,
+      brand_fonts: branding.fonts,
       
       // Report details
       generation_date: format(new Date(), "yyyy-MM-dd"),
@@ -269,6 +276,13 @@ async function generatePDF(
       corelogic_avm_range_low: corelogicData?.range_low ? formatCurrency(corelogicData.range_low) : 'Not available',
       corelogic_avm_range_high: corelogicData?.range_high ? formatCurrency(corelogicData.range_high) : 'Not available',
       
+      // CoreLogic & REINZ data
+      corelogic_logo_url: 'https://via.placeholder.com/200x50?text=CoreLogic',
+      reinz_logo_url: 'https://via.placeholder.com/200x50?text=REINZ',
+      corelogic_market_statistics: corelogicMarketStats ? formatMarketStatistics(corelogicMarketStats) : null,
+      reinz_market_statistics: reinzMarketStats ? formatMarketStatistics(reinzMarketStats) : null,
+      property_activity_summary: propertyActivitySummary || null,
+      
       // Market statistics
       market_statistics: {
         median_price: marketStats?.median_price ? formatCurrency(marketStats.median_price) : '750,000',
@@ -286,7 +300,7 @@ async function generatePDF(
       agent_license_number: agent.license_number || 'License #12345',
       agent_phone: agent.phone || '123-456-7890',
       agent_email: agent.email || 'agent@nexusproperty.com',
-      agent_photo_url: agent.photo_url || 'https://via.placeholder.com/150x150?text=Agent',
+      agent_photo_url: brandingConfig?.agentPhoto || agent.photo_url || 'https://via.placeholder.com/150x150?text=Agent',
       
       // AI enhanced content
       ai_property_description: aiPropertyDescription,
@@ -308,6 +322,46 @@ async function generatePDF(
       page_number: '{{page}}',
       total_pages: '{{pages}}',
     };
+    
+    // Helper function to format market statistics for display
+    function formatMarketStatistics(stats) {
+      if (!stats) return null;
+      
+      const formattedStats = {};
+      
+      // Format and transform the statistics for display
+      Object.entries(stats).forEach(([key, value]) => {
+        // Format numeric values
+        if (typeof value === 'number') {
+          // Format as currency if the key suggests it's a price/value
+          if (key.toLowerCase().includes('price') || key.toLowerCase().includes('value')) {
+            formattedStats[formatLabel(key)] = `$${formatCurrency(value)}`;
+          } 
+          // Format as percentage if the key suggests it's a percentage
+          else if (key.toLowerCase().includes('percent') || key.toLowerCase().includes('growth')) {
+            formattedStats[formatLabel(key)] = `${value.toFixed(1)}%`;
+          }
+          // Otherwise just format as number
+          else {
+            formattedStats[formatLabel(key)] = value.toString();
+          }
+        } else {
+          formattedStats[formatLabel(key)] = value;
+        }
+      });
+      
+      return formattedStats;
+    }
+    
+    // Helper to format keys into readable labels
+    function formatLabel(key) {
+      // Convert camelCase or snake_case to Title Case With Spaces
+      return key
+        .replace(/_/g, ' ')
+        .replace(/([A-Z])/g, ' $1')
+        .replace(/^./, str => str.toUpperCase())
+        .trim();
+    }
 
     // Generate HTML using template
     const html = template(templateData);
@@ -464,20 +518,77 @@ serve(async (req: Request) => {
       // Continue without comparables
     }
     
-    // Fetch CoreLogic data if available
-    const { data: corelogicData, error: corelogicError } = await supabaseClient
-      .from('corelogic_property_data')
-      .select('*')
-      .eq('property_id', appraisalData.property_id)
-      .maybeSingle();
+    // Fetch CoreLogic data if available and requested
+    let corelogicData = null;
+    let corelogicMarketStats = null;
+    let propertyActivitySummary = null;
     
-    if (corelogicError) {
-      console.error(JSON.stringify({
-        level: 'warning',
-        message: 'Error fetching CoreLogic data',
-        error: corelogicError.message
-      }));
-      // Continue without CoreLogic data
+    if (requestData.includeCoreLogicData !== false) {
+      // Fetch CoreLogic AVM data
+      const { data: clData, error: corelogicError } = await supabaseClient
+        .from('corelogic_property_data')
+        .select('*')
+        .eq('property_id', appraisalData.property_id)
+        .maybeSingle();
+      
+      if (corelogicError) {
+        console.error(JSON.stringify({
+          level: 'warning',
+          message: 'Error fetching CoreLogic AVM data',
+          error: corelogicError.message
+        }));
+        // Continue without CoreLogic data
+      } else {
+        corelogicData = clData;
+      }
+      
+      // Fetch CoreLogic market statistics
+      const { data: clMarketStats, error: marketStatsError } = await supabaseClient
+        .from('appraisals')
+        .select('market_statistics_corelogic')
+        .eq('property_id', appraisalData.property_id)
+        .maybeSingle();
+      
+      if (marketStatsError) {
+        console.error(JSON.stringify({
+          level: 'warning',
+          message: 'Error fetching CoreLogic market statistics',
+          error: marketStatsError.message
+        }));
+      } else {
+        corelogicMarketStats = clMarketStats?.market_statistics_corelogic || null;
+      }
+      
+      // Fetch property activity summary
+      const { data: activityData, error: activityError } = await supabaseClient
+        .from('appraisals')
+        .select('property_activity_summary')
+        .eq('property_id', appraisalData.property_id)
+        .maybeSingle();
+      
+      if (activityError) {
+        console.error(JSON.stringify({
+          level: 'warning',
+          message: 'Error fetching property activity summary',
+          error: activityError.message
+        }));
+      } else {
+        propertyActivitySummary = activityData?.property_activity_summary || null;
+        
+        // Format activity data for the report
+        if (propertyActivitySummary) {
+          propertyActivitySummary = Object.entries(propertyActivitySummary).map(([period, data]) => {
+            const priceChange = data.price_change || 0;
+            return {
+              period,
+              sales_count: data.sales_count,
+              median_price: data.median_price,
+              price_change: priceChange.toFixed(1),
+              change_class: priceChange >= 0 ? 'positive-change' : 'negative-change'
+            };
+          });
+        }
+      }
     }
     
     // Fetch market statistics
@@ -496,6 +607,27 @@ serve(async (req: Request) => {
         error: marketStatsError.message
       }));
       // Continue without market statistics
+    }
+    
+    // Fetch REINZ market statistics if requested
+    let reinzMarketStats = null;
+    
+    if (requestData.includeREINZData !== false) {
+      const { data: reinzData, error: reinzError } = await supabaseClient
+        .from('appraisals')
+        .select('market_statistics_reinz')
+        .eq('property_id', appraisalData.property_id)
+        .maybeSingle();
+      
+      if (reinzError) {
+        console.error(JSON.stringify({
+          level: 'warning',
+          message: 'Error fetching REINZ market statistics',
+          error: reinzError.message
+        }));
+      } else {
+        reinzMarketStats = reinzData?.market_statistics_reinz || null;
+      }
     }
     
     // Generate PDF with enhanced template

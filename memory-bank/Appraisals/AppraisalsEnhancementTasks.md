@@ -93,44 +93,44 @@ This task list outlines the steps required to enhance the appraisal generation s
 ### Phase 4: Report Generation Enhancement
 
 #### Task 4.1: Select PDF Generation Strategy
-- [ ] Evaluate Puppeteer/Playwright vs pdfMake
-- [ ] Set up selected library in Edge Function
-- [ ] Create test templates
+- [x] Evaluate Puppeteer/Playwright vs pdfMake
+- [x] Set up selected library in Edge Function
+- [x] Create test templates
 
 #### Task 4.2: Implement Branding Integration
 - [x] Create function to retrieve branding data
 - [x] Implement fallback branding
-- [ ] Add branding elements to report templates
+- [x] Add branding elements to report templates
 
 #### Task 4.3: Enhance Report Template Design
-- [ ] Create wireframes for report layout
-- [ ] Implement new sections for CoreLogic and AI content
-- [ ] Design data visualizations for market trends
-- [ ] Implement consistent styling with branding
+- [x] Create wireframes for report layout
+- [x] Implement new sections for CoreLogic and AI content
+- [x] Design data visualizations for market trends
+- [x] Implement consistent styling with branding
 
 #### Task 4.4: Update Report Generation Edge Function
 - [x] Update data aggregation for new fields
-- [ ] Implement template rendering with new design
+- [x] Implement template rendering with new design
 - [x] Add support for agent/agency branding
-- [ ] Optimize image handling
+- [x] Optimize image handling
 
 ### Phase 5: Frontend Updates
 
 #### Task 5.1: Update Team Management UI
-- [ ] Create logo upload component
-- [ ] Add color picker for brand color
-- [ ] Create form for agency disclaimer text
-- [ ] Implement save functionality
+- [x] Create logo upload component
+- [x] Add color picker for brand color
+- [x] Create form for agency disclaimer text
+- [x] Implement save functionality
 
 #### Task 5.2: Update Profile Management UI
-- [ ] Add profile photo upload
-- [ ] Create fields for license number and contact info
-- [ ] Implement branding preview
+- [x] Add profile photo upload
+- [x] Create fields for license number and contact info
+- [x] Implement branding preview
 
 #### Task 5.3: Update Appraisal Detail View
-- [ ] Create UI components for CoreLogic AVM data
-- [ ] Add sections for REINZ market data
-- [ ] Update report preview
+- [x] Create UI components for CoreLogic AVM data
+- [x] Add sections for REINZ market data
+- [x] Update report preview
 
 ### Phase 6: Testing and Documentation
 
@@ -172,7 +172,7 @@ This task list outlines the steps required to enhance the appraisal generation s
 | 1     | 15             | 15          | 100%     |
 | 2     | 15             | 15          | 100%     |
 | 3     | 8              | 8           | 100%     |
-| 4     | 4              | 13          | 31%      |
-| 5     | 0              | 10          | 0%       |
+| 4     | 13             | 13          | 100%     |
+| 5     | 10             | 10          | 100%     |
 | 6     | 0              | 9           | 0%       |
-| Total | 42             | 70          | 60%      |
+| Total | 61             | 70          | 87%      |

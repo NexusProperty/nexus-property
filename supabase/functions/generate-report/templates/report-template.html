@@ -7,13 +7,15 @@
   <style>
     :root {
       /* Default brand colors, will be overridden with dynamic values */
-      --brand-primary: #2563EB;
-      --brand-secondary: #3B82F6;
-      --text-primary: #1F2937;
-      --text-secondary: #6B7280;
-      --bg-primary: #FFFFFF;
-      --bg-secondary: #F3F4F6;
-      --bg-accent: #EFF6FF;
+      --brand-primary: {{brand_colors.primary}};
+      --brand-secondary: {{brand_colors.secondary}};
+      --text-primary: {{brand_colors.textPrimary}};
+      --text-secondary: {{brand_colors.textSecondary}};
+      --bg-primary: {{brand_colors.bgPrimary}};
+      --bg-secondary: {{brand_colors.bgSecondary}};
+      --bg-accent: {{brand_colors.accent}};
+      --font-primary: {{brand_fonts.primaryFont}};
+      --font-heading: {{brand_fonts.headingFont}};
     }
 
     /* Base styles */
@@ -24,11 +26,15 @@
     }
     
     body {
-      font-family: 'Arial', sans-serif;
+      font-family: var(--font-primary);
       color: var(--text-primary);
       background-color: var(--bg-primary);
       line-height: 1.5;
       font-size: 12pt;
+    }
+    
+    h1, h2, h3, h4, h5 {
+      font-family: var(--font-heading);
     }
     
     /* Layout */
@@ -213,6 +219,71 @@
       color: var(--brand-primary);
     }
     
+    /* Data source containers */
+    .data-source-container {
+      margin: 0.5cm 0;
+      border: 1px solid var(--bg-secondary);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    
+    .data-source-logo {
+      padding: 0.2cm;
+      background-color: var(--bg-secondary);
+      display: flex;
+      align-items: center;
+    }
+    
+    .data-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.3cm;
+      padding: 0.3cm;
+    }
+    
+    .market-data-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .data-grid-item {
+      padding: 0.2cm;
+    }
+    
+    .data-label {
+      font-weight: bold;
+      font-size: 10pt;
+      color: var(--text-secondary);
+    }
+    
+    .data-value {
+      font-size: 12pt;
+    }
+    
+    /* Activity summary */
+    .activity-summary table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    
+    .activity-summary th,
+    .activity-summary td {
+      padding: 0.2cm;
+      text-align: left;
+      border-bottom: 1px solid var(--bg-secondary);
+    }
+    
+    .activity-summary th {
+      background-color: var(--bg-secondary);
+    }
+    
+    .positive-change {
+      color: #10B981;
+    }
+    
+    .negative-change {
+      color: #EF4444;
+    }
+    
     /* Agent section */
     .agent-section {
       display: flex;
@@ -376,6 +447,66 @@
       <!-- Chart will be inserted here by Chart.js or as an image from CoreLogic -->
       <img src="{{market_chart_url}}" alt="Market Trends Chart" style="width: 100%; height: 100%; object-fit: contain;">
     </div>
+    
+    {{#if corelogic_market_statistics}}
+    <h3>CoreLogic Market Insights</h3>
+    <div class="data-source-container">
+      <div class="data-source-logo">
+        <img src="{{corelogic_logo_url}}" alt="CoreLogic" style="height: 30px;">
+      </div>
+      <div class="data-grid market-data-grid">
+        {{#each corelogic_market_statistics}}
+        <div class="data-grid-item">
+          <div class="data-label">{{@key}}</div>
+          <div class="data-value">{{this}}</div>
+        </div>
+        {{/each}}
+      </div>
+    </div>
+    {{/if}}
+    
+    {{#if reinz_market_statistics}}
+    <h3>REINZ Market Data</h3>
+    <div class="data-source-container">
+      <div class="data-source-logo">
+        <img src="{{reinz_logo_url}}" alt="REINZ" style="height: 30px;">
+      </div>
+      <div class="data-grid market-data-grid">
+        {{#each reinz_market_statistics}}
+        <div class="data-grid-item">
+          <div class="data-label">{{@key}}</div>
+          <div class="data-value">{{this}}</div>
+        </div>
+        {{/each}}
+      </div>
+    </div>
+    {{/if}}
+    
+    {{#if property_activity_summary}}
+    <h3>Recent Sales Activity</h3>
+    <div class="activity-summary">
+      <table>
+        <thead>
+          <tr>
+            <th>Period</th>
+            <th>Number of Sales</th>
+            <th>Median Price</th>
+            <th>Change</th>
+          </tr>
+        </thead>
+        <tbody>
+          {{#each property_activity_summary}}
+          <tr>
+            <td>{{this.period}}</td>
+            <td>{{this.sales_count}}</td>
+            <td>{{valuation_currency}}{{this.median_price}}</td>
+            <td class="{{this.change_class}}">{{this.price_change}}%</td>
+          </tr>
+          {{/each}}
+        </tbody>
+      </table>
+    </div>
+    {{/if}}
   </div>
 
   <!-- Comparable Properties Page -->
