@@ -1,6 +1,6 @@
 # Appraisal Generation System Enhancement Tasks
 
-**Last Updated**: 2025-05-20
+**Last Updated**: 2025-05-25
 **Priority**: High
 **Estimated Timeline**: 3-4 Weeks
 
@@ -98,8 +98,8 @@ This task list outlines the steps required to enhance the appraisal generation s
 - [ ] Create test templates
 
 #### Task 4.2: Implement Branding Integration
-- [ ] Create function to retrieve branding data
-- [ ] Implement fallback branding
+- [x] Create function to retrieve branding data
+- [x] Implement fallback branding
 - [ ] Add branding elements to report templates
 
 #### Task 4.3: Enhance Report Template Design
@@ -109,9 +109,9 @@ This task list outlines the steps required to enhance the appraisal generation s
 - [ ] Implement consistent styling with branding
 
 #### Task 4.4: Update Report Generation Edge Function
-- [ ] Update data aggregation for new fields
+- [x] Update data aggregation for new fields
 - [ ] Implement template rendering with new design
-- [ ] Add support for agent/agency branding
+- [x] Add support for agent/agency branding
 - [ ] Optimize image handling
 
 ### Phase 5: Frontend Updates
@@ -172,7 +172,7 @@ This task list outlines the steps required to enhance the appraisal generation s
 | 1     | 15             | 15          | 100%     |
 | 2     | 15             | 15          | 100%     |
 | 3     | 8              | 8           | 100%     |
-| 4     | 0              | 13          | 0%       |
+| 4     | 4              | 13          | 31%      |
 | 5     | 0              | 10          | 0%       |
 | 6     | 0              | 9           | 0%       |
-| Total | 38             | 70          | 54%      |
+| Total | 42             | 70          | 60%      |

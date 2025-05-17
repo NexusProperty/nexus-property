@@ -15,9 +15,13 @@ interface AppraisalDataRequest {
   landArea?: number;
   floorArea?: number;
   propertyType?: string;
+  yearBuilt?: number;
+  condition?: string;
+  amenities?: string[];
   includeComparables?: boolean;
   includeMarketData?: boolean;
   includeAvm?: boolean;
+  includeBranding?: boolean;
 }
 
 interface AppraisalDataResponse {
@@ -147,6 +151,21 @@ interface AppraisalDataResponse {
         type: string;
       }[];
     };
+    branding?: {
+      agencyLogo?: string;
+      agencyPrimaryColor?: string;
+      agencyDisclaimerText?: string;
+      agencyContactDetails?: string;
+      agentPhoto?: string;
+      agentName?: string;
+      agentLicenseNumber?: string;
+      agentContactInfo?: string;
+    };
+    aiContent?: {
+      marketOverview?: string;
+      propertyDescription?: string;
+      comparableAnalysis?: string;
+    };
   };
 }
 
@@ -190,6 +209,10 @@ async function fetchAppraisalData(
           suburb: request.suburb,
           city: request.city,
           postcode: request.postcode,
+          yearBuilt: request.yearBuilt,
+          condition: request.condition,
+          amenities: request.amenities,
+          propertyType: request.propertyType,
           includeComparables: request.includeComparables,
           includeAvm: request.includeAvm
         })
@@ -232,7 +255,8 @@ async function fetchAppraisalData(
             suburb: suburb,
             city: city,
             propertyType: request.propertyType || propertyData.data.propertyAttributes.propertyType,
-            bedrooms: request.bedrooms || propertyData.data.propertyAttributes.bedrooms
+            bedrooms: request.bedrooms || propertyData.data.propertyAttributes.bedrooms,
+            yearBuilt: request.yearBuilt || propertyData.data.propertyAttributes.yearBuilt
           })
         });
 
@@ -339,6 +363,136 @@ async function fetchAppraisalData(
       response.data.propertyActivity = propertyData.data.propertyActivity;
     }
 
+    // 4. Fetch branding data if requested
+    if (request.includeBranding) {
+      try {
+        // First, get the user's team_id from profiles
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('team_id')
+          .eq('id', userId)
+          .single();
+
+        if (profileError) {
+          console.log(JSON.stringify({
+            level: 'warn',
+            message: 'Failed to fetch user profile for branding',
+            error: profileError.message
+          }));
+        } else if (profileData?.team_id) {
+          // Fetch team branding data
+          const { data: teamData, error: teamError } = await supabase
+            .from('teams')
+            .select(`
+              agency_logo_url,
+              agency_primary_color,
+              agency_disclaimer_text,
+              agency_contact_details
+            `)
+            .eq('id', profileData.team_id)
+            .single();
+
+          if (teamError) {
+            console.log(JSON.stringify({
+              level: 'warn',
+              message: 'Failed to fetch team branding data',
+              error: teamError.message
+            }));
+          } else {
+            // Fetch agent-specific data from profiles
+            const { data: agentData, error: agentError } = await supabase
+              .from('profiles')
+              .select(`
+                full_name,
+                agent_photo_url,
+                agent_license_number,
+                email,
+                phone
+              `)
+              .eq('id', userId)
+              .single();
+
+            if (agentError) {
+              console.log(JSON.stringify({
+                level: 'warn',
+                message: 'Failed to fetch agent profile data',
+                error: agentError.message
+              }));
+            }
+
+            // Add branding data to response
+            response.data.branding = {
+              agencyLogo: teamData?.agency_logo_url,
+              agencyPrimaryColor: teamData?.agency_primary_color,
+              agencyDisclaimerText: teamData?.agency_disclaimer_text,
+              agencyContactDetails: teamData?.agency_contact_details,
+              agentPhoto: agentData?.agent_photo_url,
+              agentName: agentData?.full_name,
+              agentLicenseNumber: agentData?.agent_license_number,
+              agentContactInfo: `${agentData?.email || ''}${agentData?.phone ? ` | ${agentData.phone}` : ''}`
+            };
+
+            console.log(JSON.stringify({
+              level: 'info',
+              message: 'Retrieved branding data for report',
+              teamId: profileData.team_id,
+              userId
+            }));
+          }
+        }
+      } catch (brandingError) {
+        console.log(JSON.stringify({
+          level: 'warn',
+          message: 'Exception fetching branding data',
+          error: brandingError instanceof Error ? brandingError.message : String(brandingError)
+        }));
+      }
+    }
+
+    // 5. Fetch AI-generated content if available
+    try {
+      const { data: appraisalData, error: appraisalError } = await supabase
+        .from('appraisals')
+        .select(`
+          ai_market_overview,
+          ai_property_description,
+          ai_comparable_analysis_text
+        `)
+        .eq('property_id', response.data.property.propertyId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (appraisalError) {
+        console.log(JSON.stringify({
+          level: 'info',
+          message: 'No AI content found for the property',
+          propertyId: response.data.property.propertyId
+        }));
+      } else if (appraisalData) {
+        response.data.aiContent = {
+          marketOverview: appraisalData.ai_market_overview,
+          propertyDescription: appraisalData.ai_property_description,
+          comparableAnalysis: appraisalData.ai_comparable_analysis_text
+        };
+
+        console.log(JSON.stringify({
+          level: 'info',
+          message: 'Retrieved AI content for report',
+          propertyId: response.data.property.propertyId,
+          hasMarketOverview: !!appraisalData.ai_market_overview,
+          hasPropertyDescription: !!appraisalData.ai_property_description,
+          hasComparableAnalysis: !!appraisalData.ai_comparable_analysis_text
+        }));
+      }
+    } catch (aiContentError) {
+      console.log(JSON.stringify({
+        level: 'warn',
+        message: 'Exception fetching AI content',
+        error: aiContentError instanceof Error ? aiContentError.message : String(aiContentError)
+      }));
+    }
+
     // Log the successful response
     console.log(JSON.stringify({
       level: 'info',
@@ -350,7 +504,9 @@ async function fetchAppraisalData(
         valuations: !!response.data.valuations,
         comparables: !!response.data.comparables,
         marketData: !!response.data.marketData,
-        propertyActivity: !!response.data.propertyActivity
+        propertyActivity: !!response.data.propertyActivity,
+        branding: !!response.data.branding,
+        aiContent: !!response.data.aiContent
       }
     }));
 
@@ -367,7 +523,9 @@ async function fetchAppraisalData(
           has_property_data: !!propertyData,
           has_comparables: !!response.data.comparables,
           has_market_data: !!response.data.marketData,
-          has_avm: !!response.data.valuations.avm
+          has_avm: !!response.data.valuations.avm,
+          has_branding: !!response.data.branding,
+          has_ai_content: !!response.data.aiContent
         });
 
       if (error) {

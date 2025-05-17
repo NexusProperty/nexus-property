@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{property_address}} - Property Appraisal</title>
+  <style>
+    :root {
+      /* Default brand colors, will be overridden with dynamic values */
+      --brand-primary: #2563EB;
+      --brand-secondary: #3B82F6;
+      --text-primary: #1F2937;
+      --text-secondary: #6B7280;
+      --bg-primary: #FFFFFF;
+      --bg-secondary: #F3F4F6;
+      --bg-accent: #EFF6FF;
+    }
+
+    /* Base styles */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: 'Arial', sans-serif;
+      color: var(--text-primary);
+      background-color: var(--bg-primary);
+      line-height: 1.5;
+      font-size: 12pt;
+    }
+    
+    /* Layout */
+    .page {
+      width: 21cm;
+      min-height: 29.7cm;
+      padding: 2cm;
+      margin: 0 auto;
+      position: relative;
+    }
+    
+    .page-break {
+      page-break-after: always;
+    }
+    
+    /* Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1cm;
+      border-bottom: 2px solid var(--brand-primary);
+      padding-bottom: 0.5cm;
+    }
+    
+    .logo {
+      max-height: 100px;
+      max-width: 200px;
+    }
+    
+    /* Headings */
+    h1 {
+      font-size: 24pt;
+      color: var(--brand-primary);
+      margin-bottom: 0.5cm;
+    }
+    
+    h2 {
+      font-size: 18pt;
+      color: var(--brand-primary);
+      margin-top: 1cm;
+      margin-bottom: 0.5cm;
+      padding-bottom: 0.2cm;
+      border-bottom: 1px solid var(--brand-secondary);
+    }
+    
+    h3 {
+      font-size: 14pt;
+      color: var(--brand-secondary);
+      margin-top: 0.7cm;
+      margin-bottom: 0.3cm;
+    }
+    
+    /* Property summary */
+    .property-summary {
+      display: flex;
+      margin-bottom: 1cm;
+    }
+    
+    .property-image {
+      width: 50%;
+      padding-right: 0.5cm;
+    }
+    
+    .property-image img {
+      width: 100%;
+      height: auto;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .property-details {
+      width: 50%;
+      padding-left: 0.5cm;
+    }
+    
+    .property-details dl {
+      display: grid;
+      grid-template-columns: 40% 60%;
+      gap: 0.3cm;
+    }
+    
+    .property-details dt {
+      font-weight: bold;
+    }
+    
+    /* Valuation */
+    .valuation-summary {
+      background-color: var(--bg-accent);
+      padding: 0.5cm;
+      border-radius: 8px;
+      margin-bottom: 1cm;
+      text-align: center;
+    }
+    
+    .valuation-range {
+      font-size: 18pt;
+      font-weight: bold;
+      color: var(--brand-primary);
+      margin: 0.3cm 0;
+    }
+    
+    .confidence-rating {
+      margin-top: 0.3cm;
+      font-style: italic;
+    }
+    
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 0.5cm 0 1cm 0;
+    }
+    
+    th {
+      background-color: var(--bg-secondary);
+      border-bottom: 2px solid var(--brand-secondary);
+      padding: 0.2cm 0.3cm;
+      text-align: left;
+    }
+    
+    td {
+      border-bottom: 1px solid var(--bg-secondary);
+      padding: 0.2cm 0.3cm;
+    }
+    
+    /* Comparables section */
+    .comparables {
+      margin: 1cm 0;
+    }
+    
+    .comparable-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.5cm;
+      margin: 0.5cm 0;
+    }
+    
+    .comparable-card {
+      border: 1px solid var(--bg-secondary);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    
+    .comparable-card img {
+      width: 100%;
+      height: 150px;
+      object-fit: cover;
+    }
+    
+    .comparable-details {
+      padding: 0.3cm;
+    }
+    
+    .comparable-price {
+      font-weight: bold;
+      color: var(--brand-primary);
+    }
+    
+    /* Market analysis */
+    .market-analysis {
+      margin: 1cm 0;
+    }
+    
+    .market-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.5cm;
+      margin: 0.5cm 0;
+    }
+    
+    .stat-card {
+      background-color: var(--bg-secondary);
+      padding: 0.3cm;
+      border-radius: 8px;
+      text-align: center;
+    }
+    
+    .stat-value {
+      font-size: 16pt;
+      font-weight: bold;
+      color: var(--brand-primary);
+    }
+    
+    /* Agent section */
+    .agent-section {
+      display: flex;
+      align-items: center;
+      margin: 1cm 0;
+      padding: 0.5cm;
+      background-color: var(--bg-secondary);
+      border-radius: 8px;
+    }
+    
+    .agent-photo {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      overflow: hidden;
+      margin-right: 0.5cm;
+      border: 3px solid var(--brand-primary);
+    }
+    
+    .agent-photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    /* Disclaimer */
+    .disclaimer {
+      font-size: 10pt;
+      color: var(--text-secondary);
+      margin-top: 1cm;
+      padding-top: 0.5cm;
+      border-top: 1px solid var(--bg-secondary);
+    }
+    
+    /* Footer */
+    .footer {
+      position: absolute;
+      bottom: 1cm;
+      left: 2cm;
+      right: 2cm;
+      text-align: center;
+      font-size: 10pt;
+      color: var(--text-secondary);
+    }
+    
+    /* Charts */
+    .chart-container {
+      height: 250px;
+      margin: 0.5cm 0;
+    }
+  </style>
+</head>
+<body>
+  <!-- Cover Page -->
+  <div class="page">
+    <div class="header">
+      <img src="{{agency_logo_url}}" alt="Agency Logo" class="logo">
+      <div class="report-info">
+        <h3>Property Appraisal Report</h3>
+        <p>Generated on {{generation_date}}</p>
+      </div>
+    </div>
+    
+    <h1>{{property_address}}</h1>
+    <h3>{{property_suburb}}, {{property_city}}</h3>
+    
+    <div class="property-summary">
+      <div class="property-image">
+        <img src="{{property_image_url}}" alt="Property Image">
+      </div>
+      <div class="property-details">
+        <dl>
+          <dt>Property Type:</dt>
+          <dd>{{property_type}}</dd>
+          
+          <dt>Land Size:</dt>
+          <dd>{{property_land_size}}</dd>
+          
+          <dt>Bedrooms:</dt>
+          <dd>{{property_bedrooms}}</dd>
+          
+          <dt>Bathrooms:</dt>
+          <dd>{{property_bathrooms}}</dd>
+          
+          <dt>Parking:</dt>
+          <dd>{{property_parking}}</dd>
+          
+          <dt>Year Built:</dt>
+          <dd>{{property_year_built}}</dd>
+        </dl>
+      </div>
+    </div>
+    
+    <div class="valuation-summary">
+      <h2>Estimated Market Value</h2>
+      <div class="valuation-range">{{valuation_currency}}{{valuation_low}} - {{valuation_currency}}{{valuation_high}}</div>
+      <div class="confidence-rating">Confidence Level: {{valuation_confidence}}%</div>
+    </div>
+    
+    <div class="agent-section">
+      <div class="agent-photo">
+        <img src="{{agent_photo_url}}" alt="Agent Photo">
+      </div>
+      <div class="agent-details">
+        <h3>{{agent_name}}</h3>
+        <p>{{agent_title}}</p>
+        <p>License: {{agent_license_number}}</p>
+        <p>Phone: {{agent_phone}}</p>
+        <p>Email: {{agent_email}}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Property Details Page -->
+  <div class="page page-break">
+    <h2>Property Details</h2>
+    <p class="property-description">{{ai_property_description}}</p>
+    
+    <h3>Property Features</h3>
+    <table>
+      <tbody>
+        {{#each property_details}}
+        <tr>
+          <td><strong>{{@key}}</strong></td>
+          <td>{{this}}</td>
+        </tr>
+        {{/each}}
+      </tbody>
+    </table>
+    
+    <h3>CoreLogic AVM Estimate</h3>
+    <div class="valuation-summary">
+      <div class="valuation-range">{{valuation_currency}}{{corelogic_avm_estimate}}</div>
+      <div class="confidence-rating">Confidence: {{corelogic_avm_confidence}}</div>
+      <p>Range: {{valuation_currency}}{{corelogic_avm_range_low}} - {{valuation_currency}}{{corelogic_avm_range_high}}</p>
+    </div>
+  </div>
+
+  <!-- Market Analysis Page -->
+  <div class="page page-break">
+    <h2>Market Analysis</h2>
+    <p>{{ai_market_overview}}</p>
+    
+    <div class="market-stats">
+      <div class="stat-card">
+        <h3>Median Sale Price</h3>
+        <div class="stat-value">{{valuation_currency}}{{market_statistics.median_price}}</div>
+      </div>
+      <div class="stat-card">
+        <h3>Annual Growth</h3>
+        <div class="stat-value">{{market_statistics.annual_growth}}%</div>
+      </div>
+      <div class="stat-card">
+        <h3>Days on Market</h3>
+        <div class="stat-value">{{market_statistics.days_on_market}}</div>
+      </div>
+    </div>
+    
+    <h3>Market Trends</h3>
+    <div class="chart-container">
+      <!-- Chart will be inserted here by Chart.js or as an image from CoreLogic -->
+      <img src="{{market_chart_url}}" alt="Market Trends Chart" style="width: 100%; height: 100%; object-fit: contain;">
+    </div>
+  </div>
+
+  <!-- Comparable Properties Page -->
+  <div class="page page-break">
+    <h2>Comparable Properties</h2>
+    <p>{{ai_comparable_analysis_text}}</p>
+    
+    <div class="comparable-grid">
+      {{#each comparables}}
+      <div class="comparable-card">
+        <img src="{{this.image_url}}" alt="Comparable Property">
+        <div class="comparable-details">
+          <p><strong>{{this.address}}</strong></p>
+          <p class="comparable-price">{{../valuation_currency}}{{this.sale_price}}</p>
+          <p>Sale Date: {{this.sale_date}}</p>
+          <p>Similarity: {{this.similarity_score}}%</p>
+          <p>{{this.bedrooms}} bed, {{this.bathrooms}} bath</p>
+        </div>
+      </div>
+      {{/each}}
+    </div>
+    
+    <h3>Comparable Sales Map</h3>
+    <img src="{{comparables_map_url}}" alt="Comparable Properties Map" style="width: 100%; height: auto; border-radius: 8px;">
+  </div>
+
+  <!-- Disclaimer Page -->
+  <div class="page page-break">
+    <h2>Disclaimer & Terms</h2>
+    <div class="disclaimer">
+      <p>{{agency_disclaimer_text}}</p>
+      <p>This report is for informational purposes only and should not be considered as financial or legal advice. The valuation provided is an estimate based on current market data and comparable properties. Actual property values may vary depending on various factors including but not limited to property condition, market changes, and individual buyer preferences.</p>
+      <p>Data sources: CoreLogic Property Data, REINZ Market Statistics.</p>
+      <p>© {{current_year}} {{agency_name}}. All rights reserved.</p>
+    </div>
+    
+    <div class="footer">
+      <p>Report generated by AppraisalHub | Page {{page_number}} of {{total_pages}}</p>
+      <p>{{agency_name}} | {{agency_contact_details}}</p>
+    </div>
+  </div>
+</body>
+</html>
