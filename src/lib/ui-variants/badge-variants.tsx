@@ -1,0 +1,1 @@
+export const badgeVariants = {}; // Placeholder 
