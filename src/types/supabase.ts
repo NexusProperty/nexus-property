@@ -75,6 +75,21 @@ export interface Database {
           team_id: string | null
           metadata: Json
           ai_content: Json
+          // CoreLogic integration fields
+          corelogic_property_id: string | null
+          // AI-generated text fields
+          ai_market_overview: string | null
+          ai_property_description: string | null
+          ai_comparable_analysis_text: string | null
+          // CoreLogic data fields
+          corelogic_avm_estimate: number | null
+          corelogic_avm_range_low: number | null
+          corelogic_avm_range_high: number | null
+          corelogic_avm_confidence: string | null
+          reinz_avm_estimate: number | null
+          property_activity_summary: Json
+          market_statistics_corelogic: Json
+          market_statistics_reinz: Json
         }
         Insert: {
           id?: string
@@ -99,6 +114,21 @@ export interface Database {
           team_id?: string | null
           metadata?: Json
           ai_content?: Json
+          // CoreLogic integration fields
+          corelogic_property_id?: string | null
+          // AI-generated text fields
+          ai_market_overview?: string | null
+          ai_property_description?: string | null
+          ai_comparable_analysis_text?: string | null
+          // CoreLogic data fields
+          corelogic_avm_estimate?: number | null
+          corelogic_avm_range_low?: number | null
+          corelogic_avm_range_high?: number | null
+          corelogic_avm_confidence?: string | null
+          reinz_avm_estimate?: number | null
+          property_activity_summary?: Json
+          market_statistics_corelogic?: Json
+          market_statistics_reinz?: Json
         }
         Update: {
           id?: string
@@ -123,6 +153,21 @@ export interface Database {
           team_id?: string | null
           metadata?: Json
           ai_content?: Json
+          // CoreLogic integration fields
+          corelogic_property_id?: string | null
+          // AI-generated text fields
+          ai_market_overview?: string | null
+          ai_property_description?: string | null
+          ai_comparable_analysis_text?: string | null
+          // CoreLogic data fields
+          corelogic_avm_estimate?: number | null
+          corelogic_avm_range_low?: number | null
+          corelogic_avm_range_high?: number | null
+          corelogic_avm_confidence?: string | null
+          reinz_avm_estimate?: number | null
+          property_activity_summary?: Json
+          market_statistics_corelogic?: Json
+          market_statistics_reinz?: Json
         }
         Relationships: [
           {

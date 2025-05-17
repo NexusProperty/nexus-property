@@ -16,7 +16,12 @@ import {
   CoreLogicSaleRecord,
   CoreLogicAVMResponse,
   CoreLogicMarketStatsRequest,
-  CoreLogicMarketStats
+  CoreLogicMarketStats,
+  CoreLogicPropertyImages,
+  CoreLogicTitleDetail,
+  CoreLogicComparableRequest,
+  CoreLogicComparableResponse,
+  CoreLogicPropertyActivity
 } from "./corelogic-types.ts";
 
 // Mock implementations for development without API access
@@ -25,7 +30,11 @@ import {
   createMockSalesHistory,
   createMockAVMResponse,
   createMockMarketStats,
-  createMockMatchedAddress
+  createMockMatchedAddress,
+  createMockPropertyImages,
+  createMockTitleDetail,
+  createMockComparableProperties,
+  createMockPropertyActivity
 } from "./corelogic-mock.ts";
 
 // Log levels for the client
@@ -498,6 +507,228 @@ class CoreLogicApiClient {
         error: String(error)
       });
       throw new Error(`Failed to get market statistics: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  /**
+   * Get property images for a property
+   */
+  async getPropertyImages(propertyId: string): Promise<CoreLogicPropertyImages> {
+    this.log(LogLevel.INFO, "Getting property images", { propertyId });
+
+    // If using mock mode, return a mock response
+    if (this.options.useMock) {
+      this.log(LogLevel.DEBUG, "Using mock property images");
+      
+      // Simulate API latency
+      await new Promise(resolve => setTimeout(resolve, 600));
+      
+      return createMockPropertyImages(propertyId);
+    }
+
+    try {
+      // Make the API request
+      const data = await this.makeApiRequest<any>(
+        `/property-details/nz/properties/${propertyId}/images/default`
+      );
+
+      // Transform the response to our interface format
+      const propertyImages: CoreLogicPropertyImages = {
+        propertyId,
+        images: (data.images || []).map((image: any) => ({
+          propertyId,
+          imageId: image.imageId || `img-${Math.random().toString(36).substring(2, 11)}`,
+          imageUrl: image.url || "",
+          imageType: image.type || "exterior",
+          captureDate: image.captureDate,
+          description: image.description || "",
+          sortOrder: image.sortOrder || 0
+        }))
+      };
+
+      this.log(LogLevel.INFO, "Property images retrieved successfully", {
+        propertyId,
+        imageCount: propertyImages.images.length
+      });
+
+      return propertyImages;
+    } catch (error) {
+      this.log(LogLevel.ERROR, "Failed to get property images", {
+        propertyId,
+        error: String(error)
+      });
+      throw new Error(`Failed to get property images: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  /**
+   * Get title details for a property
+   */
+  async getTitleDetails(propertyId: string): Promise<CoreLogicTitleDetail> {
+    this.log(LogLevel.INFO, "Getting title details", { propertyId });
+
+    // If using mock mode, return a mock response
+    if (this.options.useMock) {
+      this.log(LogLevel.DEBUG, "Using mock title details");
+      
+      // Simulate API latency
+      await new Promise(resolve => setTimeout(resolve, 700));
+      
+      return createMockTitleDetail(propertyId);
+    }
+
+    try {
+      // Make the API request
+      const data = await this.makeApiRequest<any>(
+        `/property-details/nz/properties/${propertyId}/title`
+      );
+
+      // Transform the response to our interface format
+      const titleDetail: CoreLogicTitleDetail = {
+        propertyId,
+        titleReference: data.titleReference || "",
+        titleType: data.titleType || "Freehold",
+        landDistrict: data.landDistrict || "",
+        estateType: data.estateType || "Fee Simple",
+        registeredOwners: data.registeredOwners || [],
+        legalDescription: data.legalDescription || "",
+        areaSize: data.areaSize?.value || 0,
+        areaUnit: (data.areaSize?.unit === "ha" ? "hectares" : "sqm") as "sqm" | "hectares",
+        issueDate: data.issueDate || "",
+        encumbrances: (data.encumbrances || []).map((enc: any) => ({
+          type: enc.type || "",
+          reference: enc.reference || "",
+          dateRegistered: enc.dateRegistered || "",
+          description: enc.description || ""
+        }))
+      };
+
+      this.log(LogLevel.INFO, "Title details retrieved successfully", {
+        propertyId,
+        titleReference: titleDetail.titleReference
+      });
+
+      return titleDetail;
+    } catch (error) {
+      this.log(LogLevel.ERROR, "Failed to get title details", {
+        propertyId,
+        error: String(error)
+      });
+      throw new Error(`Failed to get title details: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  /**
+   * Get comparable properties for a property
+   */
+  async getComparableProperties(request: CoreLogicComparableRequest): Promise<CoreLogicComparableResponse> {
+    const propertyId = request.propertyId;
+    this.log(LogLevel.INFO, "Getting comparable properties", request);
+
+    // If using mock mode, return a mock response
+    if (this.options.useMock) {
+      this.log(LogLevel.DEBUG, "Using mock comparable properties");
+      
+      // Simulate API latency
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      return createMockComparableProperties(request);
+    }
+
+    try {
+      // Prepare request parameters
+      const params = new URLSearchParams();
+      if (request.radius) params.append("radius", request.radius.toString());
+      if (request.maxResults) params.append("maxResults", request.maxResults.toString());
+      if (request.similarityThreshold) params.append("similarityThreshold", request.similarityThreshold.toString());
+      if (request.saleTimeframe) params.append("saleTimeframe", request.saleTimeframe.toString());
+
+      // Make the API request
+      const data = await this.makeApiRequest<any>(
+        `/property-details/nz/properties/${propertyId}/comparables?${params.toString()}`
+      );
+
+      // Transform the response to our interface format
+      const comparableResponse: CoreLogicComparableResponse = {
+        sourcePropertyId: propertyId,
+        comparableProperties: (data.comparables || []).map((comp: any) => ({
+          propertyId: comp.propertyId || "",
+          address: comp.address || "",
+          suburb: comp.suburb || "",
+          city: comp.city || "",
+          propertyType: comp.propertyType || "Unknown",
+          bedrooms: comp.bedrooms || 0,
+          bathrooms: comp.bathrooms || 0,
+          landSize: comp.landArea?.value || 0,
+          floorArea: comp.floorArea?.value || 0,
+          yearBuilt: comp.yearBuilt,
+          saleDate: comp.lastSale?.saleDate,
+          salePrice: comp.lastSale?.salePrice?.value || 0,
+          distanceFromTarget: comp.distance?.value || 0,
+          similarityScore: comp.similarityScore || 0,
+          imageUrl: comp.imageUrl
+        }))
+      };
+
+      this.log(LogLevel.INFO, "Comparable properties retrieved successfully", {
+        propertyId,
+        comparablesCount: comparableResponse.comparableProperties.length
+      });
+
+      return comparableResponse;
+    } catch (error) {
+      this.log(LogLevel.ERROR, "Failed to get comparable properties", {
+        propertyId,
+        error: String(error)
+      });
+      throw new Error(`Failed to get comparable properties: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+
+  /**
+   * Get property activity summary
+   */
+  async getPropertyActivity(propertyId: string): Promise<CoreLogicPropertyActivity> {
+    this.log(LogLevel.INFO, "Getting property activity", { propertyId });
+
+    // If using mock mode, return a mock response
+    if (this.options.useMock) {
+      this.log(LogLevel.DEBUG, "Using mock property activity");
+      
+      // Simulate API latency
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      return createMockPropertyActivity(propertyId);
+    }
+
+    try {
+      // Make the API request
+      const data = await this.makeApiRequest<any>(
+        `/property-details/nz/properties/${propertyId}/activity`
+      );
+
+      // Transform the response to our interface format
+      const propertyActivity: CoreLogicPropertyActivity = {
+        propertyId,
+        recentSales: data.recentSales || 0,
+        averageDaysOnMarket: data.averageDaysOnMarket || 0,
+        currentListings: data.currentListings || 0,
+        priceMovement: data.priceMovement || "stable",
+        timePeriod: data.timePeriod || "last 6 months",
+        recentVisits: data.recentVisits || 0
+      };
+
+      this.log(LogLevel.INFO, "Property activity retrieved successfully", {
+        propertyId
+      });
+
+      return propertyActivity;
+    } catch (error) {
+      this.log(LogLevel.ERROR, "Failed to get property activity", {
+        propertyId,
+        error: String(error)
+      });
+      throw new Error(`Failed to get property activity: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
 }

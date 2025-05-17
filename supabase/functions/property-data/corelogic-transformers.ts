@@ -10,6 +10,10 @@ import {
   CoreLogicSaleRecord,
   CoreLogicAVMResponse,
   CoreLogicMarketStats,
+  CoreLogicPropertyImages,
+  CoreLogicTitleDetail,
+  CoreLogicComparableResponse,
+  CoreLogicPropertyActivity,
   PropertyDataResponse
 } from "./corelogic-types.ts";
 
@@ -29,7 +33,11 @@ export function createPropertyDataResponse(
   },
   salesHistory: CoreLogicSaleRecord[],
   avm: CoreLogicAVMResponse,
-  marketStats: CoreLogicMarketStats
+  marketStats: CoreLogicMarketStats,
+  propertyImages?: CoreLogicPropertyImages,
+  titleDetails?: CoreLogicTitleDetail,
+  comparableProperties?: CoreLogicComparableResponse,
+  propertyActivity?: CoreLogicPropertyActivity
 ): PropertyDataResponse {
   try {
     // Transform property details
@@ -47,22 +55,40 @@ export function createPropertyDataResponse(
       features: propertyAttributes.features
     };
 
-    // Transform comparable properties from AVM
-    const comparableProperties = avm.comparableProperties.map(comp => ({
-      propertyId: comp.propertyId,
-      address: comp.address,
-      suburb: addressDetails.addressComponents.suburb, // Use same suburb as the main property
-      city: addressDetails.addressComponents.city, // Use same city as the main property
-      propertyType: comp.propertyType,
-      bedrooms: comp.bedrooms,
-      bathrooms: comp.bathrooms,
-      landSize: comp.landSize,
-      saleDate: comp.saleDate,
-      salePrice: comp.salePrice,
-      similarityScore: comp.similarityScore,
-      // We don't have images in the API response, so use a placeholder
-      imageUrl: `https://placehold.co/600x400/e5e7eb/a1a1aa?text=Property+${comp.propertyId}`
-    }));
+    // Select the comparable properties source - prefer the dedicated API if available
+    const transformedComparables = comparableProperties 
+      ? comparableProperties.comparableProperties.map(comp => ({
+          propertyId: comp.propertyId,
+          address: comp.address,
+          suburb: comp.suburb,
+          city: comp.city,
+          propertyType: comp.propertyType,
+          bedrooms: comp.bedrooms,
+          bathrooms: comp.bathrooms,
+          landSize: comp.landSize,
+          floorArea: comp.floorArea,
+          yearBuilt: comp.yearBuilt,
+          saleDate: comp.saleDate,
+          salePrice: comp.salePrice,
+          similarityScore: comp.similarityScore,
+          distanceFromTarget: comp.distanceFromTarget,
+          imageUrl: comp.imageUrl
+        }))
+      : avm.comparableProperties.map(comp => ({
+          propertyId: comp.propertyId,
+          address: comp.address,
+          suburb: addressDetails.addressComponents.suburb, // Use same suburb as the main property
+          city: addressDetails.addressComponents.city, // Use same city as the main property
+          propertyType: comp.propertyType,
+          bedrooms: comp.bedrooms,
+          bathrooms: comp.bathrooms,
+          landSize: comp.landSize,
+          saleDate: comp.saleDate,
+          salePrice: comp.salePrice,
+          similarityScore: comp.similarityScore,
+          // We don't have images in the API response, so use a placeholder
+          imageUrl: `https://placehold.co/600x400/e5e7eb/a1a1aa?text=Property+${comp.propertyId}`
+        }));
 
     // Transform market trends
     const marketTrends = {
@@ -93,10 +119,13 @@ export function createPropertyDataResponse(
       data: {
         propertyId,
         propertyDetails,
-        comparableProperties,
+        propertyImages: propertyImages?.images,
+        titleDetails: titleDetails,
+        comparableProperties: transformedComparables,
         marketTrends,
         valuation,
-        salesHistory: transformedSalesHistory
+        salesHistory: transformedSalesHistory,
+        propertyActivity
       }
     };
   } catch (error) {

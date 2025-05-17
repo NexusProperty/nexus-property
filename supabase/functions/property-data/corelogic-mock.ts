@@ -12,7 +12,12 @@ import {
   CoreLogicSaleRecord,
   CoreLogicAVMResponse,
   CoreLogicMarketStatsRequest,
-  CoreLogicMarketStats
+  CoreLogicMarketStats,
+  CoreLogicPropertyImages,
+  CoreLogicTitleDetail,
+  CoreLogicComparableRequest,
+  CoreLogicComparableResponse,
+  CoreLogicPropertyActivity
 } from "./corelogic-types.ts";
 
 /**
@@ -251,6 +256,284 @@ export function createMockMarketStats(request: CoreLogicMarketStatsRequest): Cor
   };
 }
 
+/**
+ * Create mock property images
+ */
+export function createMockPropertyImages(propertyId: string): CoreLogicPropertyImages {
+  const hash = Math.abs(hashString(propertyId));
+  const imageCount = 3 + (hash % 5); // 3-7 images
+  const images = [];
+  
+  // Base placeholder image URL
+  const basePlaceholderUrl = "https://placehold.co/";
+  
+  // Image types
+  const imageTypes = ["exterior", "interior", "aerial", "other"] as const;
+  
+  // Generate mock images
+  for (let i = 0; i < imageCount; i++) {
+    const imageHash = hash + (i * 1000);
+    const imageType = imageTypes[i % imageTypes.length];
+    
+    // Generate different dimensions for different image types
+    let dimensions = "800x600";
+    if (imageType === "aerial") dimensions = "1024x768";
+    if (imageType === "interior") dimensions = "600x800"; // Portrait for interiors
+    
+    // Generate different colors for different images
+    const colorNum = (imageHash % 999).toString().padStart(3, '0');
+    
+    // Create image URL with placeholder
+    const imageUrl = `${basePlaceholderUrl}${dimensions}/${colorNum}/FFF?text=Property+${imageType.charAt(0).toUpperCase() + imageType.slice(1)}`;
+    
+    // Create capture date (recent for the first image, older for subsequent images)
+    const captureDate = new Date();
+    captureDate.setMonth(captureDate.getMonth() - i);
+    
+    images.push({
+      propertyId,
+      imageId: `img-${propertyId}-${i}`,
+      imageUrl,
+      imageType,
+      captureDate: captureDate.toISOString().split('T')[0],
+      description: `${imageType.charAt(0).toUpperCase() + imageType.slice(1)} view of the property`,
+      sortOrder: i
+    });
+  }
+  
+  return {
+    propertyId,
+    images
+  };
+}
+
+/**
+ * Create mock title details
+ */
+export function createMockTitleDetail(propertyId: string): CoreLogicTitleDetail {
+  const hash = Math.abs(hashString(propertyId));
+  
+  // Generate title reference
+  const titleRef = `CT-${100000 + (hash % 900000)}`;
+  
+  // Generate owner names
+  const ownerLastNames = ["Smith", "Jones", "Williams", "Brown", "Taylor", "Wilson", "Johnson", "White", "Martin", "Anderson"];
+  const ownerFirstNames = ["John", "Mary", "Robert", "Patricia", "James", "Jennifer", "Michael", "Linda", "William", "Elizabeth"];
+  
+  const ownerCount = 1 + (hash % 2); // 1-2 owners
+  const owners = [];
+  
+  for (let i = 0; i < ownerCount; i++) {
+    const nameHash = hash + (i * 1000);
+    owners.push(`${ownerFirstNames[nameHash % ownerFirstNames.length]} ${ownerLastNames[nameHash % ownerLastNames.length]}`);
+  }
+  
+  // Generate area size (matches land size from property attributes)
+  const areaSize = 400 + (hash % 1000);
+  
+  // Generate legal description
+  const lot = 1 + (hash % 100);
+  const dp = 100000 + (hash % 900000);
+  const legalDescription = `Lot ${lot} DP ${dp}`;
+  
+  // Generate issue date
+  const issueYear = 1980 + (hash % 40);
+  const issueMonth = 1 + (hash % 12);
+  const issueDay = 1 + (hash % 28);
+  const issueDate = `${issueYear}-${issueMonth.toString().padStart(2, '0')}-${issueDay.toString().padStart(2, '0')}`;
+  
+  // Generate encumbrances
+  const encumbranceTypes = ["Mortgage", "Easement", "Covenant", "Caveat"];
+  const encumbranceCount = hash % 3; // 0-2 encumbrances
+  const encumbrances = [];
+  
+  for (let i = 0; i < encumbranceCount; i++) {
+    const encHash = hash + (i * 1000);
+    const encType = encumbranceTypes[encHash % encumbranceTypes.length];
+    
+    // Generate registration date (after issue date)
+    const regYear = issueYear + 2 + (encHash % 10);
+    const regMonth = 1 + (encHash % 12);
+    const regDay = 1 + (encHash % 28);
+    const regDate = `${regYear}-${regMonth.toString().padStart(2, '0')}-${regDay.toString().padStart(2, '0')}`;
+    
+    encumbrances.push({
+      type: encType,
+      reference: `${encType.charAt(0)}${100000 + (encHash % 900000)}`,
+      dateRegistered: regDate,
+      description: encType === "Mortgage" 
+        ? "Bank mortgage" 
+        : (encType === "Easement" 
+          ? "Right of way easement" 
+          : (encType === "Covenant" 
+            ? "Land use covenant" 
+            : "Caveat against dealing"))
+    });
+  }
+  
+  return {
+    propertyId,
+    titleReference: titleRef,
+    titleType: "Freehold",
+    landDistrict: "North Auckland",
+    estateType: "Fee Simple",
+    registeredOwners: owners,
+    legalDescription,
+    areaSize,
+    areaUnit: "sqm",
+    issueDate,
+    encumbrances
+  };
+}
+
+/**
+ * Create mock comparable properties
+ */
+export function createMockComparableProperties(request: CoreLogicComparableRequest): CoreLogicComparableResponse {
+  const propertyId = request.propertyId;
+  const hash = Math.abs(hashString(propertyId));
+  
+  // Determine how many comparables to return
+  const requestedMax = request.maxResults || 10;
+  const comparableCount = Math.min(5 + (hash % 6), requestedMax); // 5-10 properties, but respecting maxResults
+  
+  const comparableProperties = [];
+  
+  // Create each comparable property
+  for (let i = 0; i < comparableCount; i++) {
+    const compHash = hash + (i * 1000);
+    
+    // Generate similarity score (decreasing as we go through the list)
+    const similarityScore = Math.max(50, 95 - (i * 5) - (hash % 10)); // 50-95%
+    
+    // Only include properties that meet the similarity threshold
+    if (request.similarityThreshold && similarityScore < request.similarityThreshold) {
+      continue;
+    }
+    
+    // Generate street number
+    const streetNumber = 1 + (compHash % 100);
+    
+    // Select street name and type
+    const streetName = streetNames[compHash % streetNames.length];
+    const streetType = streetTypes[compHash % streetTypes.length];
+    
+    // Assemble address
+    const address = `${streetNumber} ${streetName} ${streetType}`;
+    
+    // Generate suburb and city based on the original request's location
+    const suburbIndex = compHash % suburbs.length;
+    const suburb = suburbs[suburbIndex];
+    
+    // Generate distance from target (within the requested radius if specified)
+    const maxDistance = request.radius || 5;
+    const distance = (compHash % (maxDistance * 10)) / 10; // 0 to radius in 0.1 increments
+    
+    // Generate property details
+    const bedrooms = 2 + (compHash % 4); // 2-5 bedrooms
+    const bathrooms = 1 + (compHash % 3); // 1-3 bathrooms
+    const landSize = 400 + (compHash % 800); // 400-1200 sqm
+    const floorArea = 100 + (compHash % 200); // 100-300 sqm
+    const yearBuilt = 1970 + (compHash % 50); // 1970-2020
+    
+    // Generate property type (more similar properties have the same type)
+    const propertyTypes = ["House", "Townhouse", "Apartment", "Unit"];
+    const propertyType = i < 3 ? propertyTypes[0] : propertyTypes[compHash % propertyTypes.length];
+    
+    // Generate sale details (if within the sale timeframe)
+    const hasSold = i % 3 !== 0; // 2/3 of properties have sales data
+    let saleDate = undefined;
+    let salePrice = undefined;
+    
+    if (hasSold) {
+      const saleMonthsAgo = (compHash % (request.saleTimeframe || 12));
+      const saleDay = 1 + (compHash % 28);
+      const today = new Date();
+      const saleMonth = today.getMonth() - saleMonthsAgo;
+      const saleYear = today.getFullYear() + Math.floor(saleMonth / 12);
+      const adjustedSaleMonth = ((saleMonth % 12) + 12) % 12; // Ensure month is 0-11
+      
+      const saleDate = new Date(saleYear, adjustedSaleMonth, saleDay);
+      const formattedSaleDate = saleDate.toISOString().split('T')[0];
+      
+      // Generate sale price (based on similarity - more similar properties have more similar prices)
+      const basePriceVariation = (100 - similarityScore) / 100 * 0.3; // 0-30% variation based on similarity
+      const randomVariation = (compHash % 20) / 100; // Additional ±10% random variation
+      const priceMultiplier = 0.85 + (basePriceVariation + randomVariation);
+      const basePrice = 800000; // Base property value
+      
+      comparableProperties.push({
+        propertyId: `CP${compHash.toString().slice(0, 8)}`,
+        address,
+        suburb,
+        city: "Auckland", // Using a fixed city for simplicity
+        propertyType,
+        bedrooms,
+        bathrooms,
+        landSize,
+        floorArea,
+        yearBuilt,
+        saleDate: formattedSaleDate,
+        salePrice: Math.round(basePrice * priceMultiplier),
+        distanceFromTarget: distance,
+        similarityScore,
+        imageUrl: `https://placehold.co/800x600/${(compHash % 999).toString().padStart(3, '0')}/FFF?text=Comparable+${i+1}`
+      });
+    } else {
+      // No sale data for this property
+      comparableProperties.push({
+        propertyId: `CP${compHash.toString().slice(0, 8)}`,
+        address,
+        suburb,
+        city: "Auckland", // Using a fixed city for simplicity
+        propertyType,
+        bedrooms,
+        bathrooms,
+        landSize,
+        floorArea,
+        yearBuilt,
+        distanceFromTarget: distance,
+        similarityScore,
+        imageUrl: `https://placehold.co/800x600/${(compHash % 999).toString().padStart(3, '0')}/FFF?text=Comparable+${i+1}`
+      });
+    }
+  }
+  
+  return {
+    sourcePropertyId: propertyId,
+    comparableProperties
+  };
+}
+
+/**
+ * Create mock property activity summary
+ */
+export function createMockPropertyActivity(propertyId: string): CoreLogicPropertyActivity {
+  const hash = Math.abs(hashString(propertyId));
+  
+  // Generate statistics
+  const recentSales = 10 + (hash % 30); // 10-40 recent sales
+  const averageDaysOnMarket = 20 + (hash % 40); // 20-60 days on market
+  const currentListings = 5 + (hash % 15); // 5-20 current listings
+  
+  // Generate price movement direction
+  const priceMovementOptions = ["up", "down", "stable"] as const;
+  const priceMovement = priceMovementOptions[hash % 3];
+  
+  // Generate recent visits (for popular listings)
+  const recentVisits = 50 + (hash % 200); // 50-250 recent visits
+  
+  return {
+    propertyId,
+    recentSales,
+    averageDaysOnMarket,
+    currentListings,
+    priceMovement,
+    timePeriod: "last 6 months",
+    recentVisits
+  };
+}
+
 // Helper function to create a hash from a string
 function hashString(str: string): number {
   let hash = 0;
@@ -299,4 +582,12 @@ const streetNames = [
 const streetTypes = [
   "Street", "Road", "Avenue", "Drive", "Place", "Way", "Court", "Terrace",
   "Lane", "Close", "Crescent", "Boulevard"
+];
+
+// Sample suburbs for mocking
+const suburbs = [
+  "Mount Eden", "Ponsonby", "Grey Lynn", "Parnell", "Remuera",
+  "Epsom", "Mission Bay", "St Heliers", "Devonport", "Takapuna",
+  "Albany", "Howick", "Pakuranga", "Manukau", "Papatoetoe",
+  "Henderson", "New Lynn", "Te Atatu", "Titirangi", "Glen Eden"
 ]; 

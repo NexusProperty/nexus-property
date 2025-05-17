@@ -95,6 +95,75 @@ export interface CoreLogicAVMResponse {
   }>;
 }
 
+// Property Images
+export interface CoreLogicPropertyImage {
+  propertyId: string;
+  imageId: string;
+  imageUrl: string;
+  imageType: 'exterior' | 'interior' | 'aerial' | 'other';
+  captureDate?: string;
+  description?: string;
+  sortOrder?: number;
+}
+
+export interface CoreLogicPropertyImages {
+  propertyId: string;
+  images: CoreLogicPropertyImage[];
+}
+
+// Title Details
+export interface CoreLogicTitleDetail {
+  propertyId: string;
+  titleReference: string;
+  titleType: string;
+  landDistrict: string;
+  estateType: string;
+  registeredOwners: string[];
+  legalDescription: string;
+  areaSize: number;
+  areaUnit: 'sqm' | 'hectares';
+  issueDate: string;
+  encumbrances: Array<{
+    type: string;
+    reference: string;
+    dateRegistered: string;
+    description: string;
+  }>;
+}
+
+// Comparable Properties Request
+export interface CoreLogicComparableRequest {
+  propertyId: string;
+  radius?: number; // in kilometers
+  maxResults?: number;
+  similarityThreshold?: number; // 0-100
+  saleTimeframe?: number; // in months
+}
+
+// Comparable Properties Response
+export interface CoreLogicComparableProperty {
+  propertyId: string;
+  address: string;
+  suburb: string;
+  city: string;
+  propertyType: string;
+  bedrooms: number;
+  bathrooms: number;
+  landSize: number;
+  floorArea: number;
+  yearBuilt?: number;
+  saleDate?: string;
+  salePrice?: number;
+  distanceFromTarget: number; // in kilometers
+  similarityScore: number; // 0-100
+  imageUrl?: string;
+}
+
+export interface CoreLogicComparableResponse {
+  sourcePropertyId: string;
+  comparableProperties: CoreLogicComparableProperty[];
+}
+
 // Market statistics
 export interface CoreLogicMarketStatsRequest {
   suburb: string;
@@ -116,6 +185,17 @@ export interface CoreLogicMarketStats {
   asOf: string;
 }
 
+// Activity Summary
+export interface CoreLogicPropertyActivity {
+  propertyId: string;
+  recentSales: number;
+  averageDaysOnMarket: number;
+  currentListings: number;
+  priceMovement: 'up' | 'down' | 'stable';
+  timePeriod: string; // e.g., "last 6 months"
+  recentVisits: number; // number of people who viewed this property online
+}
+
 // Property data response (final transformed output)
 export interface PropertyDataResponse {
   success: boolean;
@@ -135,6 +215,8 @@ export interface PropertyDataResponse {
       yearBuilt?: number;
       features?: string[];
     };
+    propertyImages?: CoreLogicPropertyImage[];
+    titleDetails?: CoreLogicTitleDetail;
     comparableProperties: Array<{
       propertyId: string;
       address: string;
@@ -150,6 +232,7 @@ export interface PropertyDataResponse {
       salePrice?: number;
       similarityScore: number;
       imageUrl?: string;
+      distanceFromTarget?: number;
     }>;
     marketTrends: {
       medianPrice: number;
@@ -171,5 +254,6 @@ export interface PropertyDataResponse {
       salePrice: number;
       saleType: string;
     }>;
+    propertyActivity?: CoreLogicPropertyActivity;
   };
 } 

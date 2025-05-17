@@ -155,15 +155,30 @@ async function fetchPropertyData(
       const [
         salesHistory,
         avm,
-        marketStats
+        marketStats,
+        propertyImages,
+        titleDetails,
+        propertyActivity
       ] = await Promise.all([
         corelogic.getPropertySalesHistory(resolvedPropertyId),
         corelogic.getPropertyAVM(resolvedPropertyId),
         corelogic.getMarketStatistics({
           suburb: request.suburb || '',
           city: request.city || ''
-        })
+        }),
+        corelogic.getPropertyImages(resolvedPropertyId),
+        corelogic.getTitleDetails(resolvedPropertyId),
+        corelogic.getPropertyActivity(resolvedPropertyId)
       ]);
+
+      // Fetch comparable properties with additional parameters
+      const comparableProperties = await corelogic.getComparableProperties({
+        propertyId: resolvedPropertyId,
+        radius: 5, // 5km radius
+        maxResults: 10, // max 10 results
+        similarityThreshold: 60, // minimum 60% similarity
+        saleTimeframe: 12 // sales in the last 12 months
+      });
 
       // Create address details for the property data response
       const addressDetails = {
@@ -181,7 +196,11 @@ async function fetchPropertyData(
         addressDetails,
         salesHistory,
         avm,
-        marketStats
+        marketStats,
+        propertyImages,
+        titleDetails,
+        comparableProperties,
+        propertyActivity
       );
 
       // If successful, cache the response
