@@ -232,7 +232,11 @@ const compareTransformers = async () => {
     
     // Standard batch processing (sequential)
     const { time: standardBatchTime } = await measureTime(async () => {
-      const results: any = {};
+      interface PropertyResults {
+        [propertyId: string]: ReturnType<typeof createPropertyDataResponse>;
+      }
+      
+      const results: PropertyResults = {};
       for (const id of ids) {
         const props = await fetchPropertyAttributes(id);
         const sales = await fetchSalesHistory(id);
@@ -285,7 +289,7 @@ const compareTransformers = async () => {
     await compareTransformers();
     
     console.log('\n==== All benchmarks completed successfully ====');
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Benchmark failed:', error);
   }
 })(); 

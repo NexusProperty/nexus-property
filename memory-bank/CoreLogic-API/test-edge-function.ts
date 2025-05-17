@@ -31,16 +31,14 @@ import type { Mock } from 'jest-mock';
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace jest {
-    interface MockInstance<T = any, Y extends any[] = any[]> {
+    interface MockInstance<T = unknown, Y extends unknown[] = unknown[]> {
       mockImplementation(fn: (...args: Y) => T): this;
       mockReturnValue(value: T): this;
       mockResolvedValue(value: T): this;
       mockRejectedValue(value: unknown): this;
     }
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    function fn<T = any>(): Mock<T>;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    function mock(path: string): any;
+    function fn<T = unknown>(): Mock<T>;
+    function mock(path: string): unknown;
     function resetAllMocks(): void;
   }
 }

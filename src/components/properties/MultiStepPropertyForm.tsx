@@ -85,7 +85,7 @@ type Step = {
   title: string;
   description: string;
   fields: (keyof PropertyFormValues)[];
-  schema: z.ZodObject<any>;
+  schema: z.ZodObject<z.ZodRawShape>;
 };
 
 interface MultiStepPropertyFormProps {
@@ -202,7 +202,7 @@ export function MultiStepPropertyForm({ initialData, isEdit = false }: MultiStep
       }
       
       // Trigger validation to show all errors
-      await form.trigger(currentFields as any);
+      await form.trigger(currentFields as Array<keyof PropertyFormValues>);
       return;
     }
 

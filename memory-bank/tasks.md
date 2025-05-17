@@ -1,5 +1,43 @@
 # Nexus Property - Project Tasks
 
+## ESLint & TypeScript Type Issues Fix
+
+**Date Started**: 2025-05-17
+**Task Type**: Code Quality Improvement
+**Priority**: Medium
+**Complexity**: Medium
+
+### Task Description
+Fix TypeScript 'any' type issues identified by ESLint in the codebase. The ESLint rule `@typescript-eslint/no-explicit-any` is being enforced despite `noImplicitAny: false` in tsconfig, causing errors in the linting process.
+
+### Approach
+1. Replace explicit `any` types with more specific type definitions
+2. Use appropriate type annotations based on context
+3. When an exact type is unknown but can be narrowed:
+   - Use the `unknown` type and apply type guards
+   - Define appropriate interfaces or type aliases
+   - Use generics where appropriate
+
+### Progress Tracking
+
+| File | Lines | Status | Notes |
+|------|-------|--------|-------|
+| memory-bank/CoreLogic-API/enhanced-benchmark.ts | 235:22 | ✅ Fixed | Used ReturnType<typeof> to create a properly typed interface for the results object |
+| memory-bank/CoreLogic-API/test-edge-function.ts | 34:32, 34:47, 34:55 | ✅ Fixed | Replaced `any` with `unknown` in Jest type declarations |
+| src/components/properties/MultiStepPropertyForm.tsx | 88:23, 205:43 | ✅ Fixed | Replaced `any` with `z.ZodObject<z.ZodRawShape>` for schema type and used proper array type for form trigger |
+| src/tests/components/ProtectedRoute.test.tsx | Multiple | ⬜ Pending | |
+| src/tests/integration/auth-context.test.tsx | 122:12, 131:14 | ⬜ Pending | |
+| src/tests/mock-test.ts | 5:48 | ⬜ Pending | |
+| src/tests/performance/api-performance.test.ts | 13:26, 34:26 | ⬜ Pending | |
+| src/tests/security/api-access-control.test.ts | 57:22 | ⬜ Pending | |
+| src/tests/security/rls-policy.test.ts | 76:22 | ⬜ Pending | |
+| src/utils/lazyLoad.tsx | Multiple | ⬜ Pending | |
+| supabase/functions/generate-report/index.ts | 19:36, 20:35, 21:37 | ⬜ Pending | |
+| supabase/functions/property-data/circuit-breaker.ts | 202:39 | ⬜ Pending | |
+| supabase/functions/property-data/corelogic-service.ts | Multiple | ⬜ Pending | |
+| supabase/functions/utils/prompt-generator.ts | Multiple | ⬜ Pending | |
+| src/hooks/useRealtimeSubscription.ts | 63:31 | ⬜ Pending | |
+
 ## CoreLogic API Integration
 
 ### Status Overview
