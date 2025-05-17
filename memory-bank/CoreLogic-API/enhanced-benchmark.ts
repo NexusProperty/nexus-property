@@ -1,8 +1,8 @@
 /**
- * CoreLogic API Benchmark
+ * CoreLogic API Enhanced Benchmark
  * 
- * This script benchmarks various aspects of the CoreLogic API integration,
- * including API calls, data transformation, and caching strategies.
+ * This script benchmarks the optimized transformation functions and compares
+ * them with the standard transformation functions.
  */
 
 import { createCoreLogicClient, LogLevel } from './corelogic-service';
@@ -160,105 +160,6 @@ const benchmarkTransformation = async () => {
 };
 
 /**
- * Benchmarks batch processing performance with different concurrency levels
- */
-const benchmarkBatchProcessing = async () => {
-  console.log('\n==== Batch Processing Benchmark ====');
-  
-  // Mock functions
-  const fetchPropertyAttributes = (id: string) => Promise.resolve(createMockPropertyAttributes(id));
-  const fetchSalesHistory = (id: string) => Promise.resolve(createMockSalesHistory(id, 20));
-  const fetchAVM = (id: string) => Promise.resolve(createMockAVM(id));
-  const fetchMarketStats = () => Promise.resolve(createMockMarketStats());
-  
-  // Function to test batch processing with varying concurrency
-  const testBatchProcessing = async (propertyIds: string[], concurrencyLimit: number) => {
-    const { time } = await measureTime(
-      () => batchPropertyRequest(
-        propertyIds,
-        fetchPropertyAttributes,
-        fetchSalesHistory,
-        fetchAVM,
-        fetchMarketStats,
-        concurrencyLimit
-      )
-    );
-    
-    return time;
-  };
-  
-  // Test with different batch sizes and concurrency limits
-  const batchSizes = [5, 10, 20];
-  const concurrencyLimits = [1, 2, 5, 10];
-  
-  for (const batchSize of batchSizes) {
-    console.log(`\nBatch size: ${batchSize} properties`);
-    
-    const ids = mockPropertyIds.slice(0, batchSize);
-    
-    for (const concurrency of concurrencyLimits) {
-      // Skip if concurrency > batch size
-      if (concurrency > batchSize) continue;
-      
-      const time = await testBatchProcessing(ids, concurrency);
-      const timePerProperty = time / batchSize;
-      
-      console.log(`Concurrency=${concurrency}: ${time}ms total, ${timePerProperty.toFixed(2)}ms per property`);
-    }
-  }
-};
-
-/**
- * Benchmarks caching strategies
- */
-const benchmarkCaching = async () => {
-  console.log('\n==== Caching Strategy Benchmark ====');
-  
-  // Simulated cache with different hit rates
-  const createCacheSimulator = (hitRate: number) => {
-    let callCount = 0;
-    
-    return async () => {
-      callCount++;
-      // Simulate cache hit based on hit rate
-      if (Math.random() < hitRate) {
-        // Cache hit - return immediately
-        return {};
-      } else {
-        // Cache miss - simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 200));
-        return {};
-      }
-    };
-  };
-  
-  // Test different cache hit rates
-  const hitRates = [0, 0.5, 0.8, 0.95];
-  const iterations = 100;
-  
-  for (const hitRate of hitRates) {
-    console.log(`\nCache hit rate: ${hitRate * 100}%`);
-    
-    const cachedFn = createCacheSimulator(hitRate);
-    
-    const { time } = await measureTime(
-      async () => {
-        for (let i = 0; i < iterations; i++) {
-          await cachedFn();
-        }
-      },
-      1
-    );
-    
-    const avgTime = time / iterations;
-    
-    console.log(`Average response time: ${avgTime.toFixed(2)}ms`);
-    console.log(`Theoretical time without caching: ${200}ms`);
-    console.log(`Time saved: ${((200 - avgTime) / 200 * 100).toFixed(2)}%`);
-  }
-};
-
-/**
  * Compares standard vs. optimized transformers
  */
 const compareTransformers = async () => {
@@ -280,13 +181,7 @@ const compareTransformers = async () => {
   const avm = createMockAVM(propertyId);
   const marketStats = createMockMarketStats();
   
-  console.log('\nMemory usage comparison:');
-  
-  // Measure before
-  if (global.gc) {
-    global.gc();
-  }
-  const beforeMemory = process.memoryUsage().heapUsed / 1024 / 1024;
+  console.log('\nLarge dataset (1000 sales) performance:');
   
   // Standard transformation
   const { time: standardTime } = await measureTime(
@@ -301,18 +196,6 @@ const compareTransformers = async () => {
     1
   );
   
-  if (global.gc) {
-    global.gc();
-  }
-  const afterStandardMemory = process.memoryUsage().heapUsed / 1024 / 1024;
-  const standardMemoryUsage = afterStandardMemory - beforeMemory;
-  
-  // Reset memory measurement
-  if (global.gc) {
-    global.gc();
-  }
-  const beforeOptimizedMemory = process.memoryUsage().heapUsed / 1024 / 1024;
-  
   // Optimized transformation
   const { time: optimizedTime } = await measureTime(
     () => createOptimizedPropertyDataResponse(
@@ -326,33 +209,83 @@ const compareTransformers = async () => {
     1
   );
   
-  if (global.gc) {
-    global.gc();
-  }
-  const afterOptimizedMemory = process.memoryUsage().heapUsed / 1024 / 1024;
-  const optimizedMemoryUsage = afterOptimizedMemory - beforeOptimizedMemory;
-  
   console.log(`Standard transformer time: ${standardTime}ms`);
   console.log(`Optimized transformer time: ${optimizedTime}ms`);
   console.log(`Time improvement: ${((standardTime - optimizedTime) / standardTime * 100).toFixed(2)}%`);
   
-  console.log(`Standard transformer memory: ${standardMemoryUsage.toFixed(2)}MB`);
-  console.log(`Optimized transformer memory: ${optimizedMemoryUsage.toFixed(2)}MB`);
-  console.log(`Memory improvement: ${((standardMemoryUsage - optimizedMemoryUsage) / standardMemoryUsage * 100).toFixed(2)}%`);
+  // Test with different property counts
+  console.log('\nMulti-property batch processing:');
+  
+  // Mock functions
+  const fetchPropertyAttributes = (id: string) => Promise.resolve(createMockPropertyAttributes(id));
+  const fetchSalesHistory = (id: string) => Promise.resolve(createMockSalesHistory(id, 20));
+  const fetchAVM = (id: string) => Promise.resolve(createMockAVM(id));
+  const fetchMarketStats = () => Promise.resolve(createMockMarketStats());
+  
+  // Test with different batch sizes
+  const batchSizes = [5, 10, 20];
+  
+  for (const batchSize of batchSizes) {
+    console.log(`\nProcessing ${batchSize} properties in batch:`);
+    
+    const ids = mockPropertyIds.slice(0, batchSize);
+    
+    // Standard batch processing (sequential)
+    const { time: standardBatchTime } = await measureTime(async () => {
+      const results: any = {};
+      for (const id of ids) {
+        const props = await fetchPropertyAttributes(id);
+        const sales = await fetchSalesHistory(id);
+        const avm = await fetchAVM(id);
+        const stats = await fetchMarketStats();
+        
+        results[id] = createPropertyDataResponse(
+          id,
+          props,
+          {
+            address: `Property ${id}`,
+            addressComponents: {
+              suburb: 'Test Suburb',
+              city: 'Test City',
+              postcode: '1234'
+            }
+          },
+          sales,
+          avm,
+          stats
+        );
+      }
+      return results;
+    });
+    
+    // Optimized batch processing (parallel with caching)
+    const { time: optimizedBatchTime } = await measureTime(async () => {
+      return batchPropertyRequest(
+        ids,
+        fetchPropertyAttributes,
+        fetchSalesHistory,
+        fetchAVM,
+        fetchMarketStats,
+        5 // concurrency limit
+      );
+    });
+    
+    console.log(`Standard sequential processing: ${standardBatchTime}ms`);
+    console.log(`Optimized parallel processing: ${optimizedBatchTime}ms`);
+    console.log(`Improvement: ${((standardBatchTime - optimizedBatchTime) / standardBatchTime * 100).toFixed(2)}%`);
+  }
 };
 
 // Run the benchmarks
 (async () => {
-  console.log('Running CoreLogic API Benchmarks...');
+  console.log('Running CoreLogic API Enhanced Benchmarks...');
   
   try {
     await benchmarkTransformation();
-    await benchmarkBatchProcessing();
-    await benchmarkCaching();
     await compareTransformers();
     
     console.log('\n==== All benchmarks completed successfully ====');
   } catch (error) {
     console.error('Benchmark failed:', error);
-}
+  }
 })(); 
